@@ -1,0 +1,111 @@
+//
+// Created by user on 2025-09-16.
+//
+
+#ifndef COMP8552_FINAL_PROJECT_WORLD_H
+#define COMP8552_FINAL_PROJECT_WORLD_H
+
+#include <memory>
+#include <vector>
+
+#include "AnimationSystem.h"
+#include "CameraSystem.h"
+#include "CollisionSystem.h"
+#include "DestructionSystem.h"
+#include "Entity.h"
+#include "EventResponseSystem.h"
+#include "KeyboardInputSystem.h"
+#include "MainMenuSystem.h"
+#include "MovementSystem.h"
+#include "RenderSystem.h"
+#include "EventManager.h"
+#include "../Map.h"
+#include "SpawnTimerSystem.h"
+#include "SceneType.h"
+
+//  Entity Manager
+class World {
+    Map map;
+    std::vector<std::unique_ptr<Entity>> entities;
+    std::vector<std::unique_ptr<Entity>> deferredEntities;
+    MovementSystem movementSystem;
+    RenderSystem renderSystem;
+    KeyboardInputSystem keyboardInputSystem;
+    CollisionSystem collisionSystem;
+    AnimationSystem animationSystem;
+    CameraSystem cameraSystem;
+    EventManager eventManager;
+    SpawnTimerSystem spawnTimerSystem;
+    DestructionSystem destructionSystem;
+    EventResponseSystem eventResponseSystem{*this};
+    MainMenuSystem mainMenuSystem;
+    public:
+    World() = default;
+    void update(float dt, const SDL_Event& event, SceneType sceneType) {
+
+        if (sceneType == SceneType::MainMenu) {
+            mainMenuSystem.update(event);
+        } else {
+            keyboardInputSystem.update(entities, event);
+            //keyboord inputs -> movement, so order matters
+            movementSystem.update(entities, dt);
+            collisionSystem.update(*this);
+            animationSystem.update(entities, dt);
+            cameraSystem.update(entities);
+            spawnTimerSystem.update(entities, dt);
+            destructionSystem.update(entities);
+        }
+        // FINALLY
+        syncronizeEntities();
+        cleanup();
+    }
+    void render() {
+        // map.draw();
+        for (auto& entity: entities) {
+            if (entity->hasComponent<Camera>()) {
+                map.draw(entity->getComponent<Camera>());
+            }
+        }
+
+        renderSystem.render(entities);
+    }
+
+    Entity& createEntity() {
+        // we use emplace instead of push so we don't create copy
+        entities.emplace_back(std::make_unique<Entity>());
+        return *entities.back();
+    }
+
+    Entity& createDeferredEntities() {
+        deferredEntities.emplace_back(std::make_unique<Entity>());
+        return *deferredEntities.back();
+    }
+
+    std::vector<std::unique_ptr<Entity>>& getEntities() {
+        return entities;
+    }
+    void cleanup() {
+        //use a lambda predicate to remove all inactive entities
+        std::erase_if(entities, [](std::unique_ptr<Entity>& e) {
+            return !e->isActive();
+        });
+    }
+
+    void syncronizeEntities() {
+        if (!deferredEntities.empty()) {
+            //push back all deferred entitites to the entitities vector
+            //using move so we don't copy
+            std::move(
+                deferredEntities.begin(),
+                deferredEntities.end(),
+                std::back_inserter((entities)));
+            // clearing the creation buffer
+            deferredEntities.clear();
+        }
+    }
+    EventManager& getEventManager() {return eventManager;}
+
+    Map& getMap() {return map;}
+};
+
+#endif //COMP8552_FINAL_PROJECT_WORLD_H

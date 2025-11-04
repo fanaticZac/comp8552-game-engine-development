@@ -1,0 +1,19 @@
+//
+// Created by user on 2025-11-04.
+//
+
+#ifndef COMP8552_FINAL_PROJECT_COLLISION_H
+#define COMP8552_FINAL_PROJECT_COLLISION_H
+
+#include <SDL3/SDL_rect.h>
+
+#include "Component.h"
+
+class Collision {
+public:
+    // Axis Aligned Bounding Box = AABB
+    static bool AABB(const SDL_FRect& rectA, const SDL_FRect& rectB);
+    static bool AABB(const Collider& colA, const Collider& colB);
+};
+
+#endif //COMP8552_FINAL_PROJECT_COLLISION_H
