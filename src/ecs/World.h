@@ -10,6 +10,7 @@
 
 #include "AnimationSystem.h"
 #include "CameraSystem.h"
+#include "CharacterScaleSystem.h"
 #include "CollisionSystem.h"
 #include "DestructionSystem.h"
 #include "Entity.h"
@@ -19,9 +20,11 @@
 #include "MovementSystem.h"
 #include "RenderSystem.h"
 #include "EventManager.h"
+#include "PhysicsSystem.h"
 #include "../Map.h"
 #include "SpawnTimerSystem.h"
 #include "SceneType.h"
+#include "ShadowSystem.h"
 
 //  Entity Manager
 class World {
@@ -39,6 +42,9 @@ class World {
     DestructionSystem destructionSystem;
     EventResponseSystem eventResponseSystem{*this};
     MainMenuSystem mainMenuSystem;
+    PhysicsSystem physicsSystem;
+    ShadowSystem shadowSystem;
+    CharacterScaleSystem characterScaleSystem;
     public:
     World() = default;
     void update(float dt, const SDL_Event& event, SceneType sceneType) {
@@ -46,14 +52,20 @@ class World {
         if (sceneType == SceneType::MainMenu) {
             mainMenuSystem.update(event);
         } else {
-            keyboardInputSystem.update(entities, event);
+            keyboardInputSystem.update(entities, event, dt);
             //keyboord inputs -> movement, so order matters
             movementSystem.update(entities, dt);
+            physicsSystem.update(entities, dt);
             collisionSystem.update(*this);
             animationSystem.update(entities, dt);
             cameraSystem.update(entities);
+            shadowSystem.update(entities);
+            characterScaleSystem.update(entities);
             spawnTimerSystem.update(entities, dt);
             destructionSystem.update(entities);
+            // TODO - convert map to it's own class (LevelSystem)
+            map.updateParallaxBackground(dt);
+            map.updateLevelScroll(dt);
         }
         // FINALLY
         syncronizeEntities();

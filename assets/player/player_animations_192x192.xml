@@ -1,0 +1,160 @@
+<animations>
+    <!-- backwards is stand in this game (because running is default - game is at minimum speed) -->
+
+<!--    STAND-->
+    <stand>
+        <frame x="0" y="0" w="192" h="192" />
+    </stand>
+
+    <stand_and_gun_0>
+        <frame x="0" y="576" w="192" h="192" />
+    </stand_and_gun_0>
+
+    <stand_and_gun_1>
+        <frame x="0" y="1152" w="192" h="192" />
+    </stand_and_gun_1>
+<!--    WALK-->
+
+<!--    WALKING IS DOUBLED UP HERE IN SUCH WAY AS THE ANIMATIONS MATCH CLIPS FOR THE RUNNING SAME LEG FORWARD SAVE MOVEMENT-->
+<!--    4TH FRAME IS STANDING-->
+<!--    AS SYSTEM BELOW WILL USE NEXT FRAME IN 4 OR 8 GROUPINGS - AS CODING IN ANIMATIONSYSTEM-->
+    <walk>
+        <frame x="0" y="0" w="192" h="192" />
+        <frame x="0" y="0" w="192" h="192" />
+        <frame x="192" y="0" w="192" h="192" />
+        <frame x="192" y="0" w="192" h="192" />
+        <frame x="0" y="192" w="192" h="192" />
+        <frame x="0" y="192" w="192" h="192" />
+        <frame x="192" y="192" w="192" h="192" />
+        <frame x="192" y="192" w="192" h="192" />
+    </walk>
+
+    <walk_and_gun_0>
+        <frame x="0" y="384" w="192" h="192" />
+        <frame x="0" y="384" w="192" h="192" />
+        <frame x="192" y="384" w="192" h="192" />
+        <frame x="192" y="384" w="192" h="192" />
+        <frame x="0" y="576"  w="192" h="192" />
+        <frame x="0" y="576"  w="192" h="192" />
+        <frame x="192" y="576"  w="192" h="192" />
+        <frame x="192" y="576"  w="192" h="192" />
+    </walk_and_gun_0>
+
+    <walk_and_gun_1>
+        <frame x="0" y="1152" w="192" h="192" />
+        <frame x="0" y="1152" w="192" h="192" />
+        <frame x="192" y="1152" w="192" h="192" />
+        <frame x="192" y="1152" w="192" h="192" />
+        <frame x="0" y="1344"  w="192" h="192" />
+        <frame x="0" y="1344"  w="192" h="192" />
+        <frame x="192" y="1344"  w="192" h="192" />
+        <frame x="192" y="1344"  w="192" h="192" />
+    </walk_and_gun_1>
+
+<!--    RUN-->
+    <run>
+        <frame x="0" y="0" w="192" h="192" />
+        <frame x="192" y="0" w="192" h="192" />
+        <frame x="384" y="0" w="192" h="192" />
+        <frame x="576" y="0" w="192" h="192" />
+        <frame x="0" y="192" w="192" h="192" />
+        <frame x="192" y="192" w="192" h="192" />
+        <frame x="384" y="192" w="192" h="192" />
+        <frame x="576" y="192" w="192" h="192" />
+    </run>
+
+<!--    RUN FAST-->
+    <run_fast>
+        <frame x="0" y="0" w="192" h="192" />
+        <frame x="192" y="0" w="192" h="192" />
+        <frame x="384" y="0" w="192" h="192" />
+        <frame x="576" y="0" w="192" h="192" />
+        <frame x="0" y="192" w="192" h="192" />
+        <frame x="192" y="192" w="192" h="192" />
+        <frame x="384" y="192" w="192" h="192" />
+        <frame x="576" y="192" w="192" h="192" />
+    </run_fast>
+
+    <run_and_gun_0>
+        <frame x="0" y="384" w="192" h="192" />
+        <frame x="192" y="384" w="192" h="192" />
+        <frame x="384" y="384" w="192" h="192" />
+        <frame x="576" y="384" w="192" h="192" />
+        <frame x="0" y="576"  w="192" h="192" />
+        <frame x="192" y="576"  w="192" h="192" />
+        <frame x="384" y="576"  w="192" h="192" />
+        <frame x="576" y="576"  w="192" h="192" />
+    </run_and_gun_0>
+
+    <run_and_gun_0_fast>
+        <frame x="0" y="384" w="192" h="192" />
+        <frame x="192" y="384" w="192" h="192" />
+        <frame x="384" y="384" w="192" h="192" />
+        <frame x="576" y="384" w="192" h="192" />
+        <frame x="0" y="576"  w="192" h="192" />
+        <frame x="192" y="576"  w="192" h="192" />
+        <frame x="384" y="576"  w="192" h="192" />
+        <frame x="576" y="576"  w="192" h="192" />
+    </run_and_gun_0_fast>
+
+    <run_and_gun_1>
+        <frame x="0" y="1152" w="192" h="192" />
+        <frame x="192" y="1152" w="192" h="192" />
+        <frame x="384" y="1152" w="192" h="192" />
+        <frame x="576" y="1152" w="192" h="192" />
+        <frame x="0" y="1344"  w="192" h="192" />
+        <frame x="192" y="1344"  w="192" h="192" />
+        <frame x="384" y="1344"  w="192" h="192" />
+        <frame x="576" y="1344"  w="192" h="192" />
+    </run_and_gun_1>
+
+    <run_and_gun_1_fast>
+        <frame x="0" y="1152" w="192" h="192" />
+        <frame x="192" y="1152" w="192" h="192" />
+        <frame x="384" y="1152" w="192" h="192" />
+        <frame x="576" y="1152" w="192" h="192" />
+        <frame x="0" y="1344"  w="192" h="192" />
+        <frame x="192" y="1344"  w="192" h="192" />
+        <frame x="384" y="1344"  w="192" h="192" />
+        <frame x="576" y="1344"  w="192" h="192" />
+    </run_and_gun_1_fast>
+
+<!--    BOOST-->
+    <boost>
+        <frame x="0" y="768" w="192" h="192" />
+        <frame x="192" y="768" w="192" h="192" />
+        <frame x="384" y="768" w="192" h="192" />
+        <frame x="576" y="768" w="192" h="192" />
+    </boost>
+
+    <boost_and_gun_0>
+        <frame x="0" y="960" w="192" h="192" />
+        <frame x="192" y="960" w="192" h="192" />
+        <frame x="384" y="960" w="192" h="192" />
+        <frame x="576" y="960" w="192" h="192" />
+    </boost_and_gun_0>
+
+    <boost_and_gun_1>
+        <frame x="0" y="1536" w="192" h="192" />
+        <frame x="192" y="1536" w="192" h="192" />
+        <frame x="384" y="1536" w="192" h="192" />
+        <frame x="576" y="1536" w="192" h="192" />
+    </boost_and_gun_1>
+
+    <fall>
+        <frame x="0" y="1728" w="192" h="192" />
+        <frame x="192" y="1728" w="192" h="192" />
+
+    </fall>
+    <fall_and_gun_0>
+        <frame x="384" y="1728" w="192" h="192" />
+        <frame x="576" y="1728" w="192" h="192" />
+
+    </fall_and_gun_0>
+    <fall_and_gun_1>
+        <frame x="0" y="1920" w="192" h="192" />
+        <frame x="192" y="1920" w="192" h="192" />
+
+    </fall_and_gun_1>
+
+</animations>

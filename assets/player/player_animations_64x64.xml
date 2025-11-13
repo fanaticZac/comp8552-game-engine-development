@@ -1,0 +1,56 @@
+<animations>
+    <!-- backwards is stand in this game (because running is default - game is at minimum speed) -->
+    <stand>
+        <frame x="0" y="0" w="64" h="64" />
+    </stand>
+
+    <stand_and_gun>
+        <frame x="0" y="64" w="64" h="64" />
+    </stand_and_gun>
+
+    <!-- run is idle in this game -->
+    <run>
+        <frame x="0" y="0" w="64" h="64" />
+        <frame x="64" y="0" w="64" h="64" />
+        <frame x="128" y="0" w="64" h="64" />
+        <frame x="192" y="0" w="64" h="64" />
+    </run>
+
+    <!-- Take out stand frames to speed movement -->
+    <!-- Make another animation for this - it didn't look good with the other way -->
+    <run_fast>
+        <frame x="0" y="0" w="64" h="64" />
+        <frame x="64" y="0" w="64" h="64" />
+        <frame x="128" y="0" w="64" h="64" />
+        <frame x="192" y="0" w="64" h="64" />
+    </run_fast>
+
+    <!-- Next few are same as above but with gun extended -->
+    <run_and_gun>
+        <frame x="0" y="64" w="64" h="64" />
+        <frame x="64" y="64" w="64" h="64" />
+        <frame x="128" y="64" w="64" h="64" />
+        <frame x="192" y="64" w="64" h="64" />
+    </run_and_gun>
+
+    <run_and_gun_fast>
+        <frame x="0" y="64" w="64" h="64" />
+        <frame x="64" y="64" w="64" h="64" />
+        <frame x="128" y="64" w="64" h="64" />
+        <frame x="192" y="64" w="64" h="64" />
+    </run_and_gun_fast>
+
+    <boost>
+        <frame x="0" y="128" w="64" h="64" />
+        <frame x="64" y="128" w="64" h="64" />
+        <frame x="128" y="128" w="64" h="64" />
+        <frame x="192" y="128" w="64" h="64" />
+    </boost>
+
+    <boost_and_gun>
+        <frame x="0" y="192" w="64" h="64" />
+        <frame x="64" y="192" w="64" h="64" />
+        <frame x="128" y="192" w="64" h="64" />
+        <frame x="192" y="192" w="64" h="64" />
+    </boost_and_gun>
+</animations>

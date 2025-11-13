@@ -5,6 +5,7 @@
 #include <iostream>
 #include "Scene.h"
 #include "AssetManager.h"
+#include "CharacterScaleSystem.h"
 #include "Game.h"
 #include "TextureManager.h"
 
@@ -19,7 +20,7 @@ Scene::Scene(SceneType sceneType, const char *sceneName, const char *mapPath, co
         auto menu(world.createEntity());
         auto menuTransform = menu.addComponent<Transform>(Vector2D(0, 0), 0.0f, 1.0f);
 
-        SDL_Texture *text = TextureManager::load("../assets/menu.png");
+        SDL_Texture *text = TextureManager::load("../assets/+old_assets/menu.png");
         SDL_FRect menuSrc{0, 0, (float) windowWidth, (float) windowHeight};
         SDL_FRect menuDst{menuTransform.position.x, menuTransform.position.y, menuSrc.w, menuSrc.h};
         menu.addComponent<Sprite>(text, menuSrc, menuDst);
@@ -28,7 +29,8 @@ Scene::Scene(SceneType sceneType, const char *sceneName, const char *mapPath, co
 
     // load our map
     // map = new Map();
-    world.getMap().load(mapPath, TextureManager::load("../assets/tileset.png"));
+    world.getMap().load(mapPath, TextureManager::load("../assets/level/TileSheet1.png"));
+    // world.getMap().load(mapPath, TextureManager::load("../assets/+old_assets/tileset.png"));
     // make map colliders entities
     for (auto &collider: world.getMap().colliders) {
         auto& e = world.createEntity();
@@ -39,10 +41,11 @@ Scene::Scene(SceneType sceneType, const char *sceneName, const char *mapPath, co
         c.rect.w = collider.rect.w;
         c.rect.h = collider.rect.h;
 
-        SDL_Texture* tex = TextureManager::load("../assets/tileset.png");
-        SDL_FRect colSrc {0, 32, 32, 32};
-        SDL_FRect colDst {c.rect.x, c.rect.y, c.rect.w, c.rect.h};
-        e.addComponent<Sprite>(tex, colSrc, colDst);
+        // TO ADD THE COLLIDER DEBUG
+        // SDL_Texture* tex = TextureManager::load("../assets/+old_assets/tileset.png");
+        // SDL_FRect colSrc {0, 32, 32, 32};
+        // SDL_FRect colDst {c.rect.x, c.rect.y, c.rect.w, c.rect.h};
+        // e.addComponent<Sprite>(tex, colSrc, colDst);
     }
 
     // Add camera
@@ -57,44 +60,79 @@ Scene::Scene(SceneType sceneType, const char *sceneName, const char *mapPath, co
         std::cout << "Spawn Point x: " << spawnPoint.x << " y: " << spawnPoint.y << std::endl;
         auto& item(world.createEntity());
         auto& itemTransform = item.addComponent<Transform>(spawnPoint, 0.0f, 1.0f);
-        SDL_Texture* itemTex = TextureManager::load("../assets/coin.png");
+        SDL_Texture* itemTex = TextureManager::load("../assets/+old_assets/coin.png");
         SDL_FRect itemSrc{ 0, 0, 32, 32};
         SDL_FRect itemDst { itemTransform.position.x, itemTransform.position.y, 32, 32};
-        item.addComponent<Sprite>(itemTex, itemSrc, itemDst);
+        // item.addComponent<Sprite>(itemTex, itemSrc, itemDst);
 
         auto& itemCollider = item.addComponent<Collider>("item");
         itemCollider.rect.w = itemDst.w;
         itemCollider.rect.h = itemDst.h;
     }
 
+    // PLAYER START
     //load player
-    // player = new GameObject("../assets/ball.png", 0, 0);
+    // player = new GameObject("../assets/+old_assets/ball.png", 0, 0);
 
     //add entities
     auto& player(world.createEntity());
-    auto& playerTransform = player.addComponent<Transform>(Vector2D(0,32), 0.0f, 1.0f);
+
+    // THE x, y here  JUST ADJUSTS SPAWN POSITION
+    auto& playerTransform = player.addComponent<Transform>(Vector2D(0,0), 0.0f, 1.0f, 192, 192); // last 2 character size
     player.addComponent<Velocity>(Vector2D(1,0), 120.0f);
 
     Animation anim = AssetManager::getAnimation("player");
     player.addComponent<Animation>(anim);
 
-    // SDL_Texture* tex = TextureManager::load("../assets/ball.png");
-    // SDL_Texture* tex = TextureManager::load("../assets/mario.png");
-    SDL_Texture* tex = TextureManager::load("../assets/animations/sheep_anim.png");
+    // SDL_Texture* tex = TextureManager::load("../assets/+old_assets/ball.png");
+    // SDL_Texture* tex = TextureManager::load("../assets/+old_assets/mario.png");
+    SDL_Texture* tex = TextureManager::load("../assets/player/PlayerSheet_192x192.png");
 
-    // SDL_FRect playerSrc {0, 0, 32, 44};
+    // SDL_FRect playerSrc {0, 0, 32, 44};a
     SDL_FRect playerSrc = anim.clips[anim.currentClip].frameIndices[0];
 
     // SDL_FRect playerDst {playerTransform.position.x, playerTransform.position.y, 64, 88};
-    SDL_FRect playerDst {playerTransform.position.x, playerTransform.position.y, 64, 64};
-    player.addComponent<Sprite>(tex, playerSrc, playerDst);
+    SDL_FRect playerDst {playerTransform.position.x, playerTransform.position.y, playerTransform.width, playerTransform.height}; // last 2 character size
+    player.addComponent<Sprite>(tex, playerSrc, playerDst, playerTransform.width, playerTransform.height);
 
+    // TODO: This needs to be adjusted to be a slim part of the existing transform for HITBOX
     auto& playerCollider = player.addComponent<Collider>("player");
     playerCollider.rect.w = playerDst.w;
     playerCollider.rect.h = playerDst.h;
 
     player.addComponent<PlayerTag>();
     player.addComponent<Health>(Game::gameState.playerHealth);
+    player.addComponent<Gun>();
+    player.addComponent<Boost>();
+    player.addComponent<Physics>();
+    player.addComponent<Input>();
+    player.addComponent<Shadow>();
+    player.addComponent<CharacterScaleSystem>();
+    // I counted hit box pixels at 32x32 but this is scaled to 192x192, so times everything by 6
+    // leftOffset: 14, width:5 (14-18), topOffset
+    // player.addComponent<HitBox>(13, 11, 5, 21, 13, 9, 5, 23); // 2 hit boxes, one for boosting
+    player.addComponent<HitBox>(6*13, 6*11, 6*5, 6*21, 6*13, 6*9, 6*5, 6*23); // ^*at 192x192 - 2 hit boxes, 2nd for boosting
+
+    // Add hitbox debugger - PENDING -
+    // auto& hitBox = player.getComponent<HitBox>();
+    // auto& transform = player.getComponent<Transform>();
+    // auto& e = world.createEntity();
+    // e.addComponent<Transform>(Vector2D(transform.position.x, transform.position.x), 0.0f, 1.0f);
+    // auto& c = e.addComponent<Collider>("wall");
+    // c.rect.x = collider.rect.x;
+    // c.rect.y = collider.rect.y;
+    // c.rect.w = collider.rect.w;
+    // c.rect.h = collider.rect.h;
+
+
+    // Shadow for player
+    auto& shadow = player.getComponent<Shadow>();
+    SDL_Texture* shadowTex = TextureManager::load("../assets/shadow3.png"); // simple ellipse or transparent sprite
+    shadow.texture = shadowTex;
+
+    // PLAYER END
+
+
 
     auto& spawner (world.createEntity());
     Transform t = spawner.addComponent<Transform>(Vector2D(windowWidth/2, windowHeight - 5), 0.0f, 1.0f);
@@ -107,7 +145,7 @@ Scene::Scene(SceneType sceneType, const char *sceneName, const char *mapPath, co
         Animation anim = AssetManager::getAnimation("enemy");
         e.addComponent<Animation>(anim);
 
-        SDL_Texture* tex = TextureManager::load("../assets/animations/bird_anim.png");
+        SDL_Texture* tex = TextureManager::load("../assets/+old_assets/animations/bird_anim.png");
         SDL_FRect src = {0, 0, 32, 32};
         SDL_FRect dest {t.position.x, t.position.y, 32, 32};
         e.addComponent<Sprite>(tex, src, dest);

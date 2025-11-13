@@ -4,7 +4,6 @@
 
 #include "Game.h"
 #include <iostream>
-
 #include "AssetManager.h"
 
 // NOTE: https://wiki.libsdl.org/SDL3/CategoryAPI
@@ -66,13 +65,16 @@ void Game::init(const char *title, int width, int height, bool fullscreen) {
     }
 
     //Load assets
-    AssetManager::loadAnimation("player", "../assets/animations/sheep_animations.xml");
-    AssetManager::loadAnimation("enemy", "../assets/animations/bird_animations.xml");
+    AssetManager::loadAnimation("player", "../assets/player/player_animations_192x192.xml");
+    AssetManager::loadAnimation("enemy", "../assets/+old_assets/animations/bird_animations.xml");
 
     //Load Scenes
     sceneManager.loadScene(SceneType::MainMenu, "mainmenu", nullptr, width, height);
-    sceneManager.loadScene(SceneType::Gameplay, "level1", "../assets/map.tmx", width, height);
-    sceneManager.loadScene(SceneType::Gameplay, "level2", "../assets/map2.tmx", width, height);
+    sceneManager.loadScene(SceneType::Gameplay, "level1", "../assets/level/FinalProjectMap1.tmx", width, height);
+    // sceneManager.loadScene(SceneType::Gameplay, "level1", "../assets/+old_assets/map.tmx", width, height);
+    // sceneManager.loadScene(SceneType::Gameplay, "level2", "../assets/+old_assets/map2.tmx", width, height);
+    sceneManager.loadScene(SceneType::Gameplay, "level2", "../assets/level/FinalProjectMap1.tmx", width, height);
+
 
     // Init Game State
     gameState.playerHealth = 5;
@@ -164,7 +166,7 @@ void Game::render() {
 
 // GAME LOOP FUNCTIONS ----- END
 // GETTER/SETTERS ----- START
-s
+
 bool Game::running() const {
     return isRunning;
 }

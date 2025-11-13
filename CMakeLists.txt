@@ -63,7 +63,11 @@ add_executable(comp8552_Final_Project src/main.cpp
         src/ecs/Entity.h
         src/ecs/World.h
         src/Map.h
-        src/Map.cpp)
+        src/Map.cpp
+        src/ecs/system/PhysicsSystem.h
+        src/ecs/system/PhysicsSystem.cpp
+        src/ecs/system/ShadowSystem.h
+        src/ecs/system/CharacterScaleSystem.h)
 
 # MY ADDED CONFIG
 target_link_libraries(comp8552_Final_Project

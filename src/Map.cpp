@@ -4,9 +4,13 @@
 
 #include "../Map.h"
 #include <cmath>
+#include <iostream>
+
 #include "TextureManager.h"
 #include <sstream>
 #include <tinyxml2.h>
+#include <SDL3/SDL.h>
+#include "Game.h"
 
 void Map::load(const char *path, SDL_Texture *ts) {
     tileset = ts;
@@ -78,9 +82,80 @@ void Map::load(const char *path, SDL_Texture *ts) {
         }
     }
 
+    // IMAGE LAYER FOR PARALLAX BACKGROUND MOVEMENT
+    for (auto* imageLayer = mapNode->FirstChildElement("imagelayer");
+       imageLayer != nullptr;
+       imageLayer = imageLayer->NextSiblingElement("imagelayer"))
+    {
+        auto* imageNode = imageLayer->FirstChildElement("image");
+        if (!imageNode) continue;
 
+        ImageLayer layer;
+        std::string src = imageNode->Attribute("source");
+        layer.offsetX = imageLayer->FloatAttribute("offsetx", 0.0f);
+        layer.offsetY = imageLayer->FloatAttribute("offsety", 0.0f);
+        layer.repeatX = imageLayer->IntAttribute("repeatx", 0) != 0;
+        layer.width   = imageNode->IntAttribute("width", 0);
+        layer.height  = imageNode->IntAttribute("height", 0);
 
+        // Use your TextureManager to load
+        layer.texture = TextureManager::load(src.c_str());
+        if (!layer.texture) {
+            std::cerr << "Failed to load image layer: " << src << std::endl;
+            continue;
+        }
 
+        // Assign parallax factor
+        std::string name = imageLayer->Attribute("name");
+        if (name.find("4") != std::string::npos) layer.parallaxFactor = 1.0f;
+        else if (name.find("3") != std::string::npos) layer.parallaxFactor = 0.2f;
+        else if (name.find("2") != std::string::npos) layer.parallaxFactor = 0.4f;
+        else layer.parallaxFactor = 0.6f;
+
+        imageLayers.push_back(layer);
+    }
+}
+
+void Map::updateParallaxBackground(float deltaTime) {
+    for (auto& layer : imageLayers) {
+        layer.offsetX -= layer.parallaxFactor * parallaxBaseSpeed * deltaTime;
+
+        // Correct wrapping for leftward movement
+        if (layer.repeatX && layer.offsetX <= -layer.width) {
+            layer.offsetX += layer.width;
+        }
+    }
+}
+
+void Map::updateLevelScroll(float deltaTime) {
+    // move offset continuously
+    scrollOffset += scrollSpeedPx * deltaTime;
+
+    // wrap every full tile (32px)
+    if (scrollOffset >= 32.0f)
+        scrollOffset -= 32.0f;
+}
+
+void Map::drawParallaxBackground(const Camera& cam) {
+    for (auto& layer : imageLayers) {
+        SDL_FRect dest{};
+        dest.w = static_cast<float>(layer.width);
+        dest.h = static_cast<float>(layer.height);
+
+        // Combine camera offset with autoscroll
+        dest.x = layer.offsetX - cam.view.x * (1.0f - layer.parallaxFactor);
+        dest.y = layer.offsetY - cam.view.y * (1.0f - layer.parallaxFactor);
+
+        TextureManager::draw(layer.texture, SDL_FRect{0,0,(float)layer.width,(float)layer.height}, dest);
+
+        // Draw extra copy for repeat
+        if (layer.repeatX) {
+            SDL_FRect dest2 = dest;
+            if (dest.x < 0) dest2.x = dest.x + layer.width;
+            else dest2.x = dest.x - layer.width;
+            TextureManager::draw(layer.texture, SDL_FRect{0,0,(float)layer.width,(float)layer.height}, dest2);
+        }
+    }
 }
 
 // int mapData[10][15] = {
@@ -128,7 +203,12 @@ void Map::load(const char *path, SDL_Texture *ts) {
 //     }
 // }
 
-void Map::draw(const Camera &cam) {
+void Map::draw(const Camera& cam) {
+    drawParallaxBackground(cam);
+    drawTiles(cam);
+}
+
+void Map::drawTiles(const Camera &cam) {
     SDL_FRect src{}, dest{};
     dest.w = dest.h = 32;
 
@@ -138,42 +218,43 @@ void Map::draw(const Camera &cam) {
             int type = tileData[row][col];
 
             float worldX = static_cast<float>(col) * dest.w;
-            float worldY = static_cast<float>(col) * dest.h;
+            float worldY = static_cast<float>(row) * dest.h;
 
-            dest.x = std::round(worldX - cam.view.x);
+            // dest.x = std::round(worldX - cam.view.x);
+            dest.x = std::round(worldX - cam.view.x - scrollOffset); // for scroll offset
             dest.y = std::round(worldY - cam.view.y);
 
-            // dest.x = static_cast<float>(col) * dest.w; // the size we set;
-            // dest.y = static_cast<float>(row) * dest.h;
+            // AUTOMATICALLY DO TILE PROCESSING USING MAP - NO MORE SWITCH.
+            if (type > 0) { // 0 means "empty tile" in Tiled
+                int tilesetColumns = 9;       // from .tsx
+                int tileSize = 32;            // from .tsx
 
-            switch (type) {
+                // Convert Tiled's 1-based GID to 0-based index
+                int tileIndex = type - 1;
 
-                case 1:
-                    //dirt
-                    src.x = 0;
-                    src.y = 0;
-                    src.w = 32;
-                    src.h = 32;
-                    break;
-                case 2:
-                    //grass
-                    src.x = 32;
-                    src.y = 0;
-                    src.w = 32;
-                    src.h = 32;
-                    break;
-                case 4:
-                    //water
-                    src.x = 32;
-                    src.y = 32;
-                    src.w = 32;
-                    src.h = 32;
-                    break;
-                default:
-                    break;
+                int tileX = tileIndex % tilesetColumns;
+                int tileY = tileIndex / tilesetColumns;
+
+                src.x = tileX * tileSize;
+                src.y = tileY * tileSize;
+                src.w = tileSize;
+                src.h = tileSize;
+
+                TextureManager::draw(tileset, src, dest);
             }
 
-            TextureManager::draw(tileset, src, dest);
+            // Draw one extra tile at the right edge to fill the gap for looping
+            int firstTile = tileData[row][0];
+            SDL_FRect extraSrc = src;
+            SDL_FRect extraDest = dest;
+            extraDest.x = std::round(width * tileSize - cam.view.x - scrollOffset);
+            int tilesetColumns = 9;  // same as above
+            int tileIndex = firstTile - 1;
+            int tileX = tileIndex % tilesetColumns;
+            int tileY = tileIndex / tilesetColumns;
+            extraSrc.x = tileX * tileSize;
+            extraSrc.y = tileY * tileSize;
+            TextureManager::draw(tileset, extraSrc, extraDest);
 
         }
     }
