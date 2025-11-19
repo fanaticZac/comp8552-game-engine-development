@@ -67,7 +67,14 @@ add_executable(comp8552_Final_Project src/main.cpp
         src/ecs/system/PhysicsSystem.h
         src/ecs/system/PhysicsSystem.cpp
         src/ecs/system/ShadowSystem.h
-        src/ecs/system/CharacterScaleSystem.h)
+        src/ecs/system/ScaleObjectByDistanceSystem.h
+        src/ecs/system/ShootingSystem.h
+        src/ecs/system/ShootingSystem.cpp
+        src/ecs/system/EnemyBehaviorSystem.h
+        src/ecs/system/LevelGenerationSystem.h
+        src/ecs/system/LevelGenerationSystem.cpp
+        src/ecs/system/HitBoxDebugSystem.h
+        src/ecs/system/HitBoxDebugSystem.cpp)
 
 # MY ADDED CONFIG
 target_link_libraries(comp8552_Final_Project

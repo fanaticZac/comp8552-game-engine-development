@@ -19,16 +19,24 @@ public:
                 auto &t = entity->getComponent<Transform>();
                 auto &s = entity->getComponent<Shadow>();
 
+                // NOTE: SHADOW SYSTEM WAS SETUP FOR 64X IMAGES AND HASN'T BEEN ADJUSTED - JUST USE THAT SIZE FOR NOW
+                // Note: this is used for player shadow as well as reflective bit on ground for enemy laser blasts (to inform depth)
+                // Note: -- this can be adjusted later in render (STRETCH)
+
                 // Place shadow directly under entity
-                s.renderX = t.position.x + (192 / 2);
-                s.renderY = t.groundY + 192;
+                s.renderX = t.position.x + (t.width / 2);
+                s.renderY = t.groundY + t.width;
 
                 // std::cout << "Shadow position is  X: " << s.renderX << ", Y: " << t.groundY << std::endl;
 
                 // Shrink shadow and change opaque alpha based on vertical position
                 float height = t.groundY - t.position.y;
                 if (height < 0) height = 0;
-                float ratio = std::min(height / 1000.0f, 1.0f); // 720 is screen height
+
+                float strength = 1000.0f;
+                if (entity->hasComponent<Projectile>()) strength = 2000;
+
+                float ratio = std::min(height / strength, 1.0f); // 720 is screen height
                 s.currentScale = s.maxScale - ratio * (s.maxScale - s.minScale);
                 s.currentAlpha = static_cast<Uint8>(255 * (1.0f - ratio));
                 // std::cout << "pos.y=" << t.position.y

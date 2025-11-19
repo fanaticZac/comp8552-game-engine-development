@@ -27,10 +27,14 @@ using ComponentArray = std::array<void*, MAX_COMPONENTS>;
 
 class Entity {
     bool active = true; // remove enity if false on cleanup
-
+    inline static int nextID = 0;
+    int id;
     ComponentArray componentArray {};
     ComponentBitSet componentBitSet{};
 public:
+    Entity() { id = nextID++; }
+    int getID() const { return id; }
+
     bool isActive() {
         return active;
     }

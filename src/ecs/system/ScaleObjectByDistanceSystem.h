@@ -11,21 +11,21 @@
 #include "Entity.h"
 #include "Component.h"
 
-class CharacterScaleSystem {
+class ScaleObjectByDistanceSystem {
+    // NOTE: MY GOD BE WARY OF ADJUSTING THIS STUFF AFTER THIS WORKING PERFECTLY NOW.
 public:
     void update(std::vector<std::unique_ptr<Entity> > &entities) {
         for (auto &e: entities) {
-            if (e->hasComponent<Transform>() &&
-                e->hasComponent<Sprite>() &&
-                e->hasComponent<HitBox>() &&
-                e->hasComponent<Physics>()) {
+            if (e->hasComponent<ScaleThisObjectByDistance>() &&
+                e->hasComponent<Transform>() &&
+                e->hasComponent<Sprite>()) {
                 auto &transform = e->getComponent<Transform>();
                 auto &sprite = e->getComponent<Sprite>();
-                auto &hitBox = e->getComponent<HitBox>();
+
 
                 // Get ratio for scaling
-                float depthMin = 12.0f; // literal vertical screen pixels (at bottom of screen), min value for groundY
-                float depthMax = 516; // max value for groundY
+                float depthMin = 127.24f; // literal vertical screen pixels (at bottom of screen), min value for groundY
+                float depthMax = 526.24f; // max value for groundY
                 float depthRatio = 1.0f - std::clamp((transform.groundY - depthMin) / (depthMax - depthMin), 0.0f, 1.0f);
 
                 float heightMinAtMaxDepth = 202.095; // Height Above Ground: 568.418 from debug at max depth
@@ -55,16 +55,31 @@ public:
                 float scaledWidth = sprite.baseWidth * sprite.currentScale;
                 float scaledHeight = sprite.baseHeight * sprite.currentScale;
 
-                // Compute the scaled hitbox values from base values:
-                hitBox.hitBox1offsetX = hitBox.hitBox1baseOffsetX * sprite.currentScale;
-                hitBox.hitBox1offsetY = hitBox.hitBox1baseOffsetY * sprite.currentScale;
-                hitBox.hitBox1width = hitBox.hitBox1baseWidth * sprite.currentScale;
-                hitBox.hitBox1height = hitBox.hitBox1baseHeight * sprite.currentScale;
+                if (e->hasComponent<Gun>()) {
+                    auto &gun = e->getComponent<Gun>();
+                    gun.gunTip1OffsetXScaled = gun.gunTip1BaseOffsetX * sprite.currentScale;
+                    gun.gunTip1OffsetYScaled = gun.gunTip1BaseOffsetY * sprite.currentScale;
+                    gun.gunTip2OffsetXScaled = gun.gunTip2BaseOffsetX * sprite.currentScale;
+                    gun.gunTip2OffsetYScaled = gun.gunTip2BaseOffsetY * sprite.currentScale;
+                }
 
-                hitBox.hitBox2offsetX = hitBox.hitBox2baseOffsetX * sprite.currentScale;
-                hitBox.hitBox2offsetY = hitBox.hitBox2baseOffsetY * sprite.currentScale;
-                hitBox.hitBox2width = hitBox.hitBox2baseWidth * sprite.currentScale;
-                hitBox.hitBox2height = hitBox.hitBox2baseHeight * sprite.currentScale;
+                if (e->hasComponent<HitBox>()) {
+                    auto &hitBox = e->getComponent<HitBox>();
+                    // Compute the scaled hitbox values from base values:
+                    hitBox.hitBox1widthScaled = hitBox.hitBox1baseWidth * sprite.currentScale;
+                    hitBox.hitBox1heightScaled = hitBox.hitBox1baseHeight * sprite.currentScale;
+
+                    hitBox.hitBox1offsetXScaled = hitBox.hitBox1baseOffsetX * sprite.currentScale + (
+                                                sprite.baseWidth - scaledWidth) / 2.0f;
+                    hitBox.hitBox1offsetYScaled = hitBox.hitBox1baseOffsetY * sprite.currentScale + (
+                                                sprite.baseHeight - scaledHeight);
+
+                    hitBox.hitBox2offsetXScaled = hitBox.hitBox2baseOffsetX * sprite.currentScale + (
+                                                sprite.baseWidth - scaledWidth) / 2.0f;
+                    hitBox.hitBox2offsetYScaled = hitBox.hitBox2baseOffsetY * sprite.currentScale + (
+                                                sprite.baseHeight - scaledHeight);
+                }
+
 
                 // Anchor bottom and center horizontally
                 // This - will replace some code in render - in render we check if entity has hitbox. FYI
@@ -78,7 +93,7 @@ public:
                 // std::cout << "----------------------------------------\n";
                 // // std::cout << "Entity ID: " << e->getId() << "\n";
                 //
-                // // === Transform ===
+                // // === Transform ===s
                 // std::cout << "Transform.position: (" << transform.position.x << ", " << transform.position.y << ")\n";
                 // std::cout << "Transform.groundY:  " << transform.groundY << "\n\n";
                 //

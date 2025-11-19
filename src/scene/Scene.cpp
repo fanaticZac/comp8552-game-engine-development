@@ -5,7 +5,7 @@
 #include <iostream>
 #include "Scene.h"
 #include "AssetManager.h"
-#include "CharacterScaleSystem.h"
+#include "ScaleObjectByDistanceSystem.h"
 #include "Game.h"
 #include "TextureManager.h"
 
@@ -78,8 +78,8 @@ Scene::Scene(SceneType sceneType, const char *sceneName, const char *mapPath, co
     auto& player(world.createEntity());
 
     // THE x, y here  JUST ADJUSTS SPAWN POSITION
-    auto& playerTransform = player.addComponent<Transform>(Vector2D(0,0), 0.0f, 1.0f, 192, 192); // last 2 character size
-    player.addComponent<Velocity>(Vector2D(1,0), 120.0f);
+    auto& playerTransform = player.addComponent<Transform>(Vector2D(0,0), 0.0f, 1.0f, 192, 192, 6*5); // last 2 character size, and depthWidth
+    player.addComponent<Velocity>();
 
     Animation anim = AssetManager::getAnimation("player");
     player.addComponent<Animation>(anim);
@@ -95,67 +95,56 @@ Scene::Scene(SceneType sceneType, const char *sceneName, const char *mapPath, co
     SDL_FRect playerDst {playerTransform.position.x, playerTransform.position.y, playerTransform.width, playerTransform.height}; // last 2 character size
     player.addComponent<Sprite>(tex, playerSrc, playerDst, playerTransform.width, playerTransform.height);
 
-    // TODO: This needs to be adjusted to be a slim part of the existing transform for HITBOX
     auto& playerCollider = player.addComponent<Collider>("player");
     playerCollider.rect.w = playerDst.w;
     playerCollider.rect.h = playerDst.h;
 
     player.addComponent<PlayerTag>();
     player.addComponent<Health>(Game::gameState.playerHealth);
-    player.addComponent<Gun>();
     player.addComponent<Boost>();
     player.addComponent<Physics>();
     player.addComponent<Input>();
-    player.addComponent<Shadow>();
-    player.addComponent<CharacterScaleSystem>();
+    player.addComponent<ScaleThisObjectByDistance>();
     // I counted hit box pixels at 32x32 but this is scaled to 192x192, so times everything by 6
     // leftOffset: 14, width:5 (14-18), topOffset
     // player.addComponent<HitBox>(13, 11, 5, 21, 13, 9, 5, 23); // 2 hit boxes, one for boosting
     player.addComponent<HitBox>(6*13, 6*11, 6*5, 6*21, 6*13, 6*9, 6*5, 6*23); // ^*at 192x192 - 2 hit boxes, 2nd for boosting
-
-    // Add hitbox debugger - PENDING -
-    // auto& hitBox = player.getComponent<HitBox>();
-    // auto& transform = player.getComponent<Transform>();
-    // auto& e = world.createEntity();
-    // e.addComponent<Transform>(Vector2D(transform.position.x, transform.position.x), 0.0f, 1.0f);
-    // auto& c = e.addComponent<Collider>("wall");
-    // c.rect.x = collider.rect.x;
-    // c.rect.y = collider.rect.y;
-    // c.rect.w = collider.rect.w;
-    // c.rect.h = collider.rect.h;
-
-
+    player.addComponent<Gun>(6*24, 0, 6*24, 0); // Gun tip is embedded to match in image.
     // Shadow for player
+    player.addComponent<Shadow>();
     auto& shadow = player.getComponent<Shadow>();
-    SDL_Texture* shadowTex = TextureManager::load("../assets/shadow3.png"); // simple ellipse or transparent sprite
+    SDL_Texture* shadowTex = TextureManager::load("../assets/shadow4.png"); // simple ellipse or transparent sprite
     shadow.texture = shadowTex;
-
     // PLAYER END
 
 
+    // OLD
+    // auto& spawner (world.createEntity());
+    // Transform t = spawner.addComponent<Transform>(Vector2D(windowWidth/2, windowHeight - 5), 0.0f, 1.0f);
+    // spawner.addComponent<TimedSpawner>(2.0f, [this, t] {
+    //    // create those birds
+    //    auto& e(world.createDeferredEntities());
+    //     e.addComponent<Transform>(Vector2D(t.position.x, t.position.y), 0.0f, 1.0f);
+    //     e.addComponent<Velocity>(Vector2D(0, -1), 100.0f);
+    //
+    //     Animation anim = AssetManager::getAnimation("enemy");
+    //     e.addComponent<Animation>(anim);
+    //
+    //     // SDL_Texture* tex = TextureManager::load("../assets/+old_assets/animations/bird_anim.png");
+    //
+    //     SDL_FRect src = {0, 0, 192, 192};
+    //     SDL_FRect dest {t.position.x, t.position.y, 192, 192};
+    //     e.addComponent<Sprite>(tex, src, dest);
+    //
+    //     Collider c = e.addComponent<Collider>("projectile");
+    //     c.rect.w = dest.w;
+    //     c.rect.h = dest.h;
+    //
+    //     e.addComponent<ProjectileTag>();
+    // });
 
-    auto& spawner (world.createEntity());
-    Transform t = spawner.addComponent<Transform>(Vector2D(windowWidth/2, windowHeight - 5), 0.0f, 1.0f);
-    spawner.addComponent<TimedSpawner>(2.0f, [this, t] {
-       // create those birds
-       auto& e(world.createDeferredEntities());
-        e.addComponent<Transform>(Vector2D(t.position.x, t.position.y), 0.0f, 1.0f);
-        e.addComponent<Velocity>(Vector2D(0, -1), 100.0f);
 
-        Animation anim = AssetManager::getAnimation("enemy");
-        e.addComponent<Animation>(anim);
-
-        SDL_Texture* tex = TextureManager::load("../assets/+old_assets/animations/bird_anim.png");
-        SDL_FRect src = {0, 0, 32, 32};
-        SDL_FRect dest {t.position.x, t.position.y, 32, 32};
-        e.addComponent<Sprite>(tex, src, dest);
-
-        Collider c = e.addComponent<Collider>("projectile");
-        c.rect.w = dest.w;
-        c.rect.h = dest.h;
-
-        e.addComponent<ProjectileTag>();
-    });
+    // State
 
     auto &state (world.createEntity());
     state.addComponent<SceneState>();

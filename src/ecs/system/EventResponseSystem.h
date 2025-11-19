@@ -17,12 +17,12 @@ public:
     EventResponseSystem(World &world);
 private:
     // collisions
-    void onCollision(const CollisionEvent& e, const char* otherTag, World& world);
+    void onCollision(const CollisionEvent &c, World &world);
     // This pointer passed by reference allows you to change what the pointer points to
-    bool getCollisionEntries(const CollisionEvent& e, const char* otherTag, Entity*& player, Entity*& other);
+    // bool getCollisionEntries(const CollisionEvent& e, const char* otherTag, Entity*& player, Entity*& other);
 
     // entities
-    void onPlayerAction(const PlayerActionEvent& e, const std::function<void(Entity* player, PlayerAction action)>& callback);
+    // void onPlayerAction(const PlayerActionEvent& e, const std::function<void(Entity* player, PlayerAction action)>& callback);
 };
 
 #endif //COMP8552_FINAL_PROJECT_EVENTRESPONSESYSTEM_H

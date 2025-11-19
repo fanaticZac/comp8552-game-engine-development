@@ -1,0 +1,28 @@
+//
+// Created by user on 2025-11-17.
+//
+
+#ifndef COMP8552_FINAL_PROJECT_LEVELGENERATIONSYSTEM_H
+#define COMP8552_FINAL_PROJECT_LEVELGENERATIONSYSTEM_H
+#include <memory>
+#include <vector>
+
+#include "AssetManager.h"
+#include "Component.h"
+#include "Entity.h"
+#include "MovementSystem.h"
+#include "TextureManager.h"
+
+class World; // forward declaration
+
+class LevelGenerationSystem {
+public:
+    void update(const std::vector<std::unique_ptr<Entity>> &entities, World &world, float dt);
+    static void spawnEnemy1(World &world);
+
+private:
+    float spawnTimer = 15.0f;
+    float spawnInterval = 30.0f;
+};
+
+#endif //COMP8552_FINAL_PROJECT_LEVELGENERATIONSYSTEM_H

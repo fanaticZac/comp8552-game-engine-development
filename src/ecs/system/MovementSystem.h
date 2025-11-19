@@ -21,20 +21,6 @@ public:
                 auto &velocity = entity->getComponent<Velocity>();
                 auto &transform = entity->getComponent<Transform>();
 
-                // FOR CLARIFICATION FOR MYSELF about ECS:
-                // INPUTS -> MOVEMENT SYSTEM -> PHYSICS SYSTEM -> COLLIDER SYSTEM -> RENDER SYSTEM
-                // INPUTS TAKE RAW INPUT, ADD TO COMPONENT
-                // MOVEMENT SYSTEM TRANSLATES INPUTS TO PHYSICAL MOTION (VELOCITY COMPONENT) - READS INPUTS PHYSICS, WRITES VELOCITY, BOOST
-                // PHYSICS APPLIES PHYSICS ON IT (PHYSICS COMPONENT) and apply this to transform - READS VELOCITY, BOOST, PHYSICS, WRITES TRANFORM VELOCITY
-                // COLLIDER SYSTEM (IS WHERE ILL SET MY LEVEL BOUNDARY FOR groundY)
-
-                // In MovementSystem, you only update Velocity.direction
-                // In PhysicsSystem, you apply it to Physics.velocity, then integrate to Transform.position.
-
-                // Track previous frames position
-                transform.oldPosition = transform.position;
-                // transform.oldGroundY = transform.groundY;
-
                 if (!entity->hasComponent<PlayerTag>() && !entity->hasComponent<Physics>()) {
                     Vector2D directionVec = velocity.direction;
                     // Normalizing hasn't happened yet
@@ -48,10 +34,51 @@ public:
 
                     Vector2D velocityVec = directionVec * velocity.speed;
                     transform.position += (velocityVec * dt);
+
+
+                    Vector2D dir = velocity.direction;
+                    dir.normalize();
+                    Vector2D velVec = dir * velocity.speed;
+
+                    transform.oldPosition = transform.position;
+                    transform.position += velVec * dt;
+
+                    // Determine effective width/height + offsets
+                    float offsetX = 0.0f, offsetY = 0.0f;
+                    float width = transform.width;
+                    float height = transform.height;
+
+                    if (entity->hasComponent<HitBox>()) {
+                        auto &hb = entity->getComponent<HitBox>();
+                        offsetX = hb.hitBox2offsetXScaled;
+                        offsetY = hb.hitBox2offsetYScaled;
+                        width = hb.hitBox2widthScaled;
+                        height = hb.hitBox2heightScaled;
+                    }
+
+                    // // Clamp to screen with spacing
+                    // transform.position.x = std::clamp(
+                    //     transform.position.x,
+                    //     Map::screenLeft + characterHorizontalBoundarySpacing - offsetX,
+                    //     Map::screenRight - width - offsetX - characterHorizontalBoundarySpacing
+                    // );
+                    //
+                    // transform.position.y = std::clamp(
+                    //     transform.position.y,
+                    //     Map::screenTop + characterVerticalBoundarySpacing - offsetY,
+                    //     Map::screenBottom - height - offsetY - characterVerticalBoundarySpacing
+                    // );
                 }
             }
         }
     }
+
+private:
+    // Don't change VERTICAL lightly - I used debug outputs based on this in ObjectScaler hardcoding
+    // NOTE: DON'T DO THAT ^^^ "Ok ok... sheesh, just this time."
+    // TODO: Rectify this as a public const or something. At least pull from same source rather than copying magic numbers
+    float characterVerticalBoundarySpacing = 12.0f;
+    float characterHorizontalBoundarySpacing = 24.0f;
 };
 
 #endif //COMP8552_FINAL_PROJECT_MOVEMENTSYSTEM_H

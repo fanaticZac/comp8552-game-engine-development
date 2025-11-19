@@ -50,21 +50,21 @@ public:
                 input.shootGun2 = keyDown[SDLK_RIGHT];
 
                 boost.boosting = input.boost;
-
-                gun.shooting = input.shootGun1 || input.shootGun2;
-                if (input.shootGun1) gun.gunType = 0;
-                if (input.shootGun2) gun.gunType = 1;
-
-                // Movement
-                float groundYMovementIncrement = 2.0f;
-                float directionXMovementIncrement = 2.5f;
-                float characterVerticalBoundarySpacing = 12.0f; // Don't change lightly - debug exact outputs - been used for parameters in CharacterScale
-                float characterHorizontalBoundarySpacing = 48.0f;
-
-                velocity.direction = {0, 0};
+                gun.gun1Shooting = (!input.shootGun2) ? input.shootGun1 : false;
+                gun.gun2Shooting = (!input.shootGun1) ? input.shootGun2 : false;
 
                 // For now, groundY is be changed here rather than movementSystem so we will backup old here
                 transform.oldGroundY = transform.groundY;
+
+                // Movement
+                float groundYMovementIncrement = 120.0f; // per second with dt - was 2.0 before
+                float directionXMovementIncrement = 1; // Is normalized later so will be 1 either way
+                velocity.direction = {0, 0};
+                velocity.speed = 180.0f; // will be velocity.x speed
+
+                // Movement Boundary
+                float characterVerticalBoundarySpacing = 12.0f; // Don't change lightly - debug exact outputs - been used for parameters in CharacterScale
+                float characterHorizontalBoundarySpacing = 24.0f;
 
                 // BOUNDARY CODE SPECIFICALLY - BEST NOT TO TOUCH THIS - FULLY TESTED BOUNDARY - IT'S TIME-CONSUMING TO RETEST......
 
@@ -72,9 +72,9 @@ public:
                 if (physics.grounded || boost.boosting) { // CAN ONLY MOVE WHEN BOOSTING OR RUNNING
                     if (input.moveTop) {
                         // boundary
-                        if (transform.groundY + transform.height - characterVerticalBoundarySpacing - groundYMovementIncrement >= Map::playerGroundTop) {
+                        if (transform.groundY + transform.height - characterVerticalBoundarySpacing - (groundYMovementIncrement * dt) >= Map::playerGroundTop) {
                             // movement
-                            transform.groundY -= groundYMovementIncrement;
+                            transform.groundY -= groundYMovementIncrement * dt;
 
                             // velocity.direction.x += 2.0f; // kept here to remind me how to change to diagonal movement
 
@@ -85,8 +85,8 @@ public:
                     }
 
                     if (input.moveBottom) {
-                        if (transform.groundY + transform.height  + groundYMovementIncrement <= Map::playerGroundBottom) {
-                            transform.groundY += groundYMovementIncrement;
+                        if (transform.groundY + transform.height  + (groundYMovementIncrement * dt) <= Map::playerGroundBottom) {
+                            transform.groundY += groundYMovementIncrement * dt;
 
                             // velocity.direction.x += 2.0f; // kept here to remind me where to change to diagonal movement
 
@@ -101,13 +101,13 @@ public:
 
                     if (input.moveLeft) {
                         //boundary
-                        if (transform.position.x - directionXMovementIncrement + hitBox.hitBox2offsetY + hitBox.hitBox2width - characterHorizontalBoundarySpacing >= Map::screenLeft) {
+                        if (transform.position.x - directionXMovementIncrement + hitBox.hitBox2offsetYScaled + hitBox.hitBox2widthScaled - characterHorizontalBoundarySpacing >= Map::screenLeft) {
                             velocity.direction.x -= directionXMovementIncrement;
                         }
                     }
 
                     if (input.moveRight) {
-                        if (transform.position.x + transform.width + directionXMovementIncrement - hitBox.hitBox2offsetY - hitBox.hitBox2width + characterHorizontalBoundarySpacing <= Map::screenRight) {
+                        if (transform.position.x + transform.width + directionXMovementIncrement - hitBox.hitBox2offsetYScaled - hitBox.hitBox2widthScaled + characterHorizontalBoundarySpacing <= Map::screenRight) {
                         velocity.direction.x += directionXMovementIncrement;
                         }
                     }

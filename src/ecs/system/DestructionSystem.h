@@ -13,10 +13,10 @@
 
 class DestructionSystem {
 public:
-    void update(const std::vector<std::unique_ptr<Entity>>& entities) {
-        Entity* cameraEntity = nullptr;
+    void update(const std::vector<std::unique_ptr<Entity> > &entities) {
+        Entity *cameraEntity = nullptr;
         // find camera
-        for (auto& e: entities) {
+        for (auto &e: entities) {
             if (e->hasComponent<Camera>()) {
                 cameraEntity = e.get();
                 break;
@@ -24,19 +24,19 @@ public:
         }
 
         if (!cameraEntity) return;
-        auto& cam = cameraEntity->getComponent<Camera>();
+        auto &cam = cameraEntity->getComponent<Camera>();
 
-        for (auto& e:entities) {
-            if (e->hasComponent<Transform>() && e->hasComponent<ProjectileTag>()) {
-                auto& t = e->getComponent<Transform>();
+        for (auto &e: entities) {
+            if (e->hasComponent<Transform>() && e->hasComponent<Projectile>()) {
+                auto &t = e->getComponent<Transform>();
                 // destroy entity if goes out of cam view
                 if (
-                        t.position.x > cam.view.x + cam.view.w || // right edge
-                        t.position.x < cam.view.x || //left
-                        t.position.y > cam.view.y + cam.view.h || //bottom
-                        t.position.y < cam.view.y) { //top
+                    t.position.x > cam.view.x + cam.view.w || // right edge
+                    t.position.x < cam.view.x || //left
+                    t.position.y > cam.view.y + cam.view.h || //bottom
+                    t.position.y < cam.view.y) { //top
                     e->destroy();
-                        }
+                }
             }
         }
     }

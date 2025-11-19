@@ -38,7 +38,7 @@ public:
     // Tile Layer
     const float tileSize = 32.0f;
     float scrollOffset = 0.0f;   // pixel offset from 0 to tile size
-    float scrollSpeedPx = 96.0f; // pixels/second (96px is 3 tiles (or 1 large map block from tilesheet))
+    float scrollSpeedPx = 180.0f; // pixels/second (96px is 3 tiles (or 1 large map block from tilesheet))
     SDL_Texture *tileset = nullptr;
 
     // Add image layer for parallax background loading

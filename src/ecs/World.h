@@ -10,9 +10,10 @@
 
 #include "AnimationSystem.h"
 #include "CameraSystem.h"
-#include "CharacterScaleSystem.h"
+#include "ScaleObjectByDistanceSystem.h"
 #include "CollisionSystem.h"
 #include "DestructionSystem.h"
+#include "EnemyBehaviorSystem.h"
 #include "Entity.h"
 #include "EventResponseSystem.h"
 #include "KeyboardInputSystem.h"
@@ -20,11 +21,14 @@
 #include "MovementSystem.h"
 #include "RenderSystem.h"
 #include "EventManager.h"
+#include "HitBoxDebugSystem.h"
+#include "LevelGenerationSystem.h"
 #include "PhysicsSystem.h"
 #include "../Map.h"
 #include "SpawnTimerSystem.h"
 #include "SceneType.h"
 #include "ShadowSystem.h"
+#include "ShootingSystem.h"
 
 //  Entity Manager
 class World {
@@ -44,7 +48,11 @@ class World {
     MainMenuSystem mainMenuSystem;
     PhysicsSystem physicsSystem;
     ShadowSystem shadowSystem;
-    CharacterScaleSystem characterScaleSystem;
+    ScaleObjectByDistanceSystem scaleObjectByDistanceSystem;
+    ShootingSystem shootingSystem;
+    EnemyBehaviorSystem enemyBehaviorSystem;
+    LevelGenerationSystem levelGenerationSystem;
+    HitBoxDebugSystem hitBoxDebugSystem;
     public:
     World() = default;
     void update(float dt, const SDL_Event& event, SceneType sceneType) {
@@ -54,14 +62,19 @@ class World {
         } else {
             keyboardInputSystem.update(entities, event, dt);
             //keyboord inputs -> movement, so order matters
-            movementSystem.update(entities, dt);
+
             physicsSystem.update(entities, dt);
+            movementSystem.update(entities, dt); // AFTER PHYSICS AND KEYBOARD
             collisionSystem.update(*this);
             animationSystem.update(entities, dt);
             cameraSystem.update(entities);
             shadowSystem.update(entities);
-            characterScaleSystem.update(entities);
+            scaleObjectByDistanceSystem.update(entities);
             spawnTimerSystem.update(entities, dt);
+            enemyBehaviorSystem.update(entities, dt);
+            shootingSystem.update(entities, *this, dt);
+            levelGenerationSystem.update(entities, *this, dt);
+            // hitBoxDebugSystem.update(entities); // Uncomment for visual hitboxs
             destructionSystem.update(entities);
             // TODO - convert map to it's own class (LevelSystem)
             map.updateParallaxBackground(dt);
