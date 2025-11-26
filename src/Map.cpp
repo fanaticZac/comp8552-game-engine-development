@@ -63,10 +63,10 @@ void Map::load(const char *path, SDL_Texture *ts) {
                  obj = obj->NextSiblingElement("object"))
             {
                 Collider c;
-                c.rect.x = obj->FloatAttribute("x");
-                c.rect.y = obj->FloatAttribute("y");
-                c.rect.w = obj->FloatAttribute("width");
-                c.rect.h = obj->FloatAttribute("height");
+                c.hitBox1base.x = obj->FloatAttribute("x");
+                c.hitBox1base.y = obj->FloatAttribute("y");
+                c.hitBox1base.w = obj->FloatAttribute("width");
+                c.hitBox1base.h = obj->FloatAttribute("height");
                 colliders.push_back(c);
             }
         }

@@ -24,19 +24,20 @@ public:
             keyDown[event.key.key] = false;
 
         for (auto &entity: entities) {
-            if (entity->hasComponent<PlayerTag>() &&
+            if (entity->hasComponent<Player>() &&
                 entity->hasComponent<Transform>() &&
                 entity->hasComponent<Input>() &&
                 entity->hasComponent<Velocity>() &&
                 entity->hasComponent<Gun>() &&
-                entity->hasComponent<HitBox>()) {
+                entity->hasComponent<Collider>()) {
                 auto &input = entity->getComponent<Input>();
                 auto &gun = entity->getComponent<Gun>();
                 auto &boost = entity->getComponent<Boost>();
                 auto &physics = entity->getComponent<Physics>();
                 auto &transform = entity->getComponent<Transform>();
                 auto &velocity = entity->getComponent<Velocity>();
-                auto &hitBox = entity->getComponent<HitBox>();
+                auto &collider = entity->getComponent<Collider>();
+                auto &playerProperties = entity->getComponent<Player>();
 
                 // For convenience - mostly for animations so we can draw distinction between
                 // pressing a button and effect occurring such as velocity that could be
@@ -50,14 +51,15 @@ public:
                 input.shootGun2 = keyDown[SDLK_RIGHT];
 
                 boost.boosting = input.boost;
+                if (boost.boosting) playerProperties.isStandingOnObstacle = false;
                 gun.gun1Shooting = (!input.shootGun2) ? input.shootGun1 : false;
                 gun.gun2Shooting = (!input.shootGun1) ? input.shootGun2 : false;
 
                 // For now, groundY is be changed here rather than movementSystem so we will backup old here
-                transform.oldGroundY = transform.groundY;
+                transform.oldGroundZ = transform.groundZ;
 
                 // Movement
-                float groundYMovementIncrement = 120.0f; // per second with dt - was 2.0 before
+                float groundYMovementIncrement = 180.0f; // per second with dt - was 2.0 before
                 float directionXMovementIncrement = 1; // Is normalized later so will be 1 either way
                 velocity.direction = {0, 0};
                 velocity.speed = 180.0f; // will be velocity.x speed
@@ -69,29 +71,29 @@ public:
                 // BOUNDARY CODE SPECIFICALLY - BEST NOT TO TOUCH THIS - FULLY TESTED BOUNDARY - IT'S TIME-CONSUMING TO RETEST......
 
                 // Still honing this in. Adding the v.direction.x for W/S allows it to move in alignment with the angled level
-                if (physics.grounded || boost.boosting) { // CAN ONLY MOVE WHEN BOOSTING OR RUNNING
+                if (physics.grounded || boost.boosting || playerProperties.isStandingOnObstacle) { // CAN ONLY MOVE WHEN BOOSTING OR RUNNING
                     if (input.moveTop) {
                         // boundary
-                        if (transform.groundY + transform.height - characterVerticalBoundarySpacing - (groundYMovementIncrement * dt) >= Map::playerGroundTop) {
+                        if (transform.groundZ + transform.height - characterVerticalBoundarySpacing - (groundYMovementIncrement * dt) >= Map::playerGroundTop) {
                             // movement
-                            transform.groundY -= groundYMovementIncrement * dt;
+                            transform.groundZ -= groundYMovementIncrement * dt;
 
-                            // velocity.direction.x += 2.0f; // kept here to remind me how to change to diagonal movement
+                            // velocity.direction.x -= directionXMovementIncrement; // kept here to remind me how to change to diagonal movement
 
                             if (physics.grounded) {
-                                transform.position.y = transform.groundY;
+                                transform.position.y = transform.groundZ;
                             }
                         }
                     }
 
                     if (input.moveBottom) {
-                        if (transform.groundY + transform.height  + (groundYMovementIncrement * dt) <= Map::playerGroundBottom) {
-                            transform.groundY += groundYMovementIncrement * dt;
+                        if (transform.groundZ + transform.height  + (groundYMovementIncrement * dt) <= Map::playerGroundBottom) {
+                            transform.groundZ += groundYMovementIncrement * dt;
 
-                            // velocity.direction.x += 2.0f; // kept here to remind me where to change to diagonal movement
+                             // velocity.direction.x += directionXMovementIncrement; // kept here to remind me where to change to diagonal movement
 
                             if (physics.grounded) {
-                                transform.position.y = transform.groundY;
+                                transform.position.y = transform.groundZ;
                             }
                         }
                     }
@@ -101,13 +103,14 @@ public:
 
                     if (input.moveLeft) {
                         //boundary
-                        if (transform.position.x - directionXMovementIncrement + hitBox.hitBox2offsetYScaled + hitBox.hitBox2widthScaled - characterHorizontalBoundarySpacing >= Map::screenLeft) {
+                        if (transform.position.x - directionXMovementIncrement + collider.hitBox2Scaled.y + collider.hitBox2Scaled.w - characterHorizontalBoundarySpacing >= Map::screenLeft) {
                             velocity.direction.x -= directionXMovementIncrement;
+                            // velocity.speed += 60; // slowly back up.
                         }
                     }
 
                     if (input.moveRight) {
-                        if (transform.position.x + transform.width + directionXMovementIncrement - hitBox.hitBox2offsetYScaled - hitBox.hitBox2widthScaled + characterHorizontalBoundarySpacing <= Map::screenRight) {
+                        if (transform.position.x + transform.width + directionXMovementIncrement - collider.hitBox2Scaled.y - collider.hitBox2Scaled.w + characterHorizontalBoundarySpacing <= Map::screenRight) {
                         velocity.direction.x += directionXMovementIncrement;
                         }
                     }

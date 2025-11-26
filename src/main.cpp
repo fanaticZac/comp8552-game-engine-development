@@ -20,7 +20,7 @@ int main() {
     game = new Game();
 
     // 1280x720 = 16:9 better for mobile conversion
-    game->init("Epoch Apocalypse: Merchant Soldiers", 1280, 720, false);
+    game->init("Epoch Apocalypse: Merchant Soldiers", 1280, 736, false);
 
     // GAME LOOP - CORE
     while (game->running()) {

@@ -34,6 +34,7 @@ public:
                 // NOTE: meaning your timing will need to match for certain actions
                 // Player Animation Speeds
                 float walkSpeed = 0.08f; // same as idle (run default) - should match level speed
+                float walkBackwardsSpeed = 0.1f; // same as idle (run default) - should match level speed
                 float walkVerticallySpeed = 0.3f;
                 float runSpeed = 0.08f;
                 float runAndGunSpeed = 0.09f;
@@ -46,10 +47,10 @@ public:
                 float enemy1IdleSpeed = 1.0f;
                 float enemy1ChargingSpeed = 0.5f;
                 float enemy1ShootingSpeed = 1.0f;
-                float enemy1DyingSpeed = 3.0f/6; // 2 seconds total
+                float enemy1DyingSpeed = 3.0f / 6; // 2 seconds total
 
 
-                if (e->hasComponent<PlayerTag>() &&
+                if (e->hasComponent<Player>() &&
                     e->hasComponent<Input>() &&
                     e->hasComponent<Physics>() &&
                     e->hasComponent<Boost>() &&
@@ -58,6 +59,7 @@ public:
                     auto &gun = e->getComponent<Gun>();
                     auto &boost = e->getComponent<Boost>();
                     auto &physics = e->getComponent<Physics>();
+                    auto &playerProperties = e->getComponent<Player>();
 
                     if (boost.boosting) {
                         newClip = "boost";
@@ -65,7 +67,7 @@ public:
                         if (gun.gun2Shooting) newClip = "boost_and_gun_1";
 
                         animation.speed = boostSpeed;
-                    } else if (!physics.grounded) {
+                    } else if (!physics.grounded && !playerProperties.isStandingOnObstacle) {
                         newClip = "fall";
                         animation.speed = fallSpeed;
                         if (gun.gun1Shooting) newClip = "fall_and_gun_0";
@@ -81,13 +83,15 @@ public:
                                     newClip = "run_and_gun_0_fast";
                                     animation.speed = runAndGunFastSpeed;
                                 }
-                            } else if (input.moveRight && input.moveLeft && transform.groundY != transform.oldGroundY) {
+                            } else if (input.moveRight && input.moveLeft && transform.groundZ != transform.oldGroundZ) {
                                 // Moving up and down
                                 newClip = "walk_and_gun_0";
                                 animation.speed = walkVerticallySpeed;
-                            } else if (input.moveLeft && transform.groundY == transform.oldGroundY) {
-                                newClip = "stand_and_gun_0";
-                                animation.speed = 5.0f; // it's only 1 clip
+                            } else if (input.moveLeft && transform.groundZ == transform.oldGroundZ) {
+                                newClip = "walk_and_gun_1";
+                                animation.speed = walkBackwardsSpeed;
+                                // newClip = "stand_and_gun_0";
+                                // animation.speed = 5.0f; // it's only 1 clip
                             } else {
                                 newClip = "walk_and_gun_0";
                                 animation.speed = walkSpeed;
@@ -102,13 +106,15 @@ public:
                                     newClip = "run_and_gun_1_fast";
                                     animation.speed = runAndGunFastSpeed;
                                 }
-                            } else if (input.moveRight && input.moveLeft && transform.groundY != transform.oldGroundY) {
+                            } else if (input.moveRight && input.moveLeft && transform.groundZ != transform.oldGroundZ) {
                                 // Moving up and down
                                 newClip = "walk_and_gun_1";
                                 animation.speed = walkVerticallySpeed;
-                            } else if (input.moveLeft && transform.groundY == transform.oldGroundY) {
-                                newClip = "stand_and_gun_1";
-                                animation.speed = 5.0f; // it's only 1 clip
+                            } else if (input.moveLeft && transform.groundZ == transform.oldGroundZ) {
+                                newClip = "walk_and_gun_1";
+                                animation.speed = walkBackwardsSpeed;
+                                // newClip = "stand_and_gun_1";
+                                // animation.speed = 5.0f; // it's only 1 clip
                             } else {
                                 newClip = "walk_and_gun_1";
                                 animation.speed = walkSpeed;
@@ -123,22 +129,24 @@ public:
                                     newClip = "run_fast";
                                     animation.speed = runFastSpeed;
                                 }
-                            } else if (input.moveRight && input.moveLeft && transform.groundY != transform.oldGroundY) {
+                            } else if (input.moveRight && input.moveLeft && transform.groundZ != transform.oldGroundZ) {
                                 // Moving up and down
                                 newClip = "walk";
                                 animation.speed = walkVerticallySpeed;
-                            } else if (input.moveLeft && transform.groundY == transform.oldGroundY) {
-                                newClip = "stand";
-                                animation.speed = 5.0f; // it's only 1 clip
+                            } else if (input.moveLeft && transform.groundZ == transform.oldGroundZ) {
+                                // changed to move backwards -same as wall for simplicity
+                                newClip = "walk";
+                                animation.speed = walkBackwardsSpeed;
+                                // newClip = "stand";
+                                // animation.speed = 5.0f; // it's only 1 clip
                             } else {
                                 newClip = "walk";
                                 animation.speed = walkSpeed;
                             }
                         }
                     }
-                } else if ( e->hasComponent<Enemy>() &&
-                            e->hasComponent<EnemyBehavior>()) {
-
+                } else if (e->hasComponent<Enemy>() &&
+                           e->hasComponent<EnemyBehavior>()) {
                     // Is enemy
                     auto &enemyBehavior = e->getComponent<EnemyBehavior>();
                     if (enemyBehavior.dying) {
@@ -155,7 +163,10 @@ public:
                         animation.speed = enemy1IdleSpeed;
                     }
 
+
+
                 }
+
 
                 // Check if animation has switched
                 // if the chosen clip is different from the current one, switch to new clip, reset time and frame index
@@ -164,7 +175,7 @@ public:
                     animation.time = 0.0f;
                     animation.currentFrame = 0;
 
-                    if (e->hasComponent<PlayerTag>()) {
+                    if (e->hasComponent<Player>()) {
                         // This allows me to traverse to the same frame index on the new animations and
                         // -- handle some animations having 4 frames ands some 8. i.e. when running but raising weapon
                         size_t oldFrameCount = animation.clips[animation.currentClip].frameIndices.size();

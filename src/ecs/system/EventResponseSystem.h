@@ -7,6 +7,7 @@
 
 #include <functional>
 
+#include "Component.h"
 #include "event/BaseEvent.h"
 
 class Entity;
@@ -18,6 +19,9 @@ public:
 private:
     // collisions
     void onCollision(const CollisionEvent &c, World &world);
+
+    // bool createDynamicHitBox3(const Transform &otherTransform, const Transform &wallTransform, HitBox &wallHitBox);
+
     // This pointer passed by reference allows you to change what the pointer points to
     // bool getCollisionEntries(const CollisionEvent& e, const char* otherTag, Entity*& player, Entity*& other);
 

@@ -27,9 +27,10 @@ bool Collision::AABB(const SDL_FRect& rectA, const SDL_FRect& rectB) {
 }
 
 // passing in collider itself
-bool Collision::AABB(const Collider& colA, const Collider& colB) {
-    if (AABB(colA.rect, colB.rect)) {
-        return true;
-    }
-    return false;
-}
+// --- Don't use anymore - multiple purposed hitboxes, non standard.
+// bool Collision::AABB(const Collider& colA, const Collider& colB) {
+//     if (AABB(colA.hitBox1Scaled, colB.hitBox1Scaled)) {
+//         return true;
+//     }
+//     return false;
+// }

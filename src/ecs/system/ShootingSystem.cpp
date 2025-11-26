@@ -10,13 +10,13 @@
 
 void ShootingSystem::update(const std::vector<std::unique_ptr<Entity> > &entities, World &world, float dt) {
     for (auto &entity: entities) {
-        if (((entity->hasComponent<PlayerTag>() && entity->hasComponent<Input>()) || (
+        if (((entity->hasComponent<Player>() && entity->hasComponent<Input>()) || (
                  entity->hasComponent<Enemy>() && entity->hasComponent<EnemyBehavior>())) &&
             entity->hasComponent<Transform>() &&
             entity->hasComponent<Velocity>() &&
             entity->hasComponent<Gun>() &&
             entity->hasComponent<Sprite>() &&
-            entity->hasComponent<HitBox>()) {
+            entity->hasComponent<Collider>()) {
             if (cooldownTimer > 0.0f)
                 cooldownTimer -= dt;
 
@@ -27,7 +27,7 @@ void ShootingSystem::update(const std::vector<std::unique_ptr<Entity> > &entitie
             if (cooldownTimer > 0.0f)
                 continue;
 
-            if (entity->hasComponent<PlayerTag>()) {
+            if (entity->hasComponent<Player>()) {
                 auto &input = entity->getComponent<Input>();
                 if (!input.shootGun2) continue;
             }
@@ -53,9 +53,9 @@ void ShootingSystem::update(const std::vector<std::unique_ptr<Entity> > &entitie
 
 
             // Sprite
-            if (entity->hasComponent<PlayerTag>() && entity->hasComponent<Physics>()) {
+            if (entity->hasComponent<Player>() && entity->hasComponent<Physics>()) {
                 float direction = 1;
-                auto& laserProjectile = laserEntity.addComponent<Projectile>();
+                auto &laserProjectile = laserEntity.addComponent<Projectile>();
                 laserProjectile.ownerID = entity->getID();
                 auto &physics = entity->getComponent<Physics>();
                 laserEntity.addComponent<Velocity>(Velocity{{direction, 0}, laserProjectile.speed});
@@ -67,10 +67,11 @@ void ShootingSystem::update(const std::vector<std::unique_ptr<Entity> > &entitie
                             transform.position.y + gun.gunTip1OffsetYScaled + (sprite.baseHeight - scaledHeight);
                     SDL_Texture *laserTex = TextureManager::load("../assets/weapon/laser1.png");
                     auto &laserTransform = laserEntity.addComponent<Transform>(Vector2D(
-                                                            scaledAndPositionedNewX,
-                                                            scaledAndPositionedNewY),
-                                                        0.0f,
-                                                        1.0f, 192, 192, 6 * 1);
+                                                                                   scaledAndPositionedNewX,
+                                                                                   scaledAndPositionedNewY),
+                                                                               0.0f,
+                                                                               1.0f, 192, 192, 6 * 1);
+                    laserTransform.groundZ = transform.groundZ;
                     // Here we apply the scaling data from existing sprite to match scale but add scaled guntip position to align with scaled sprite
                     laserEntity.addComponent<Sprite>(Sprite{
                         .texture = laserTex,
@@ -86,22 +87,14 @@ void ShootingSystem::update(const std::vector<std::unique_ptr<Entity> > &entitie
 
                     // Add hitbox for laserbeam (this one is natively 192x192)
                     // This should just be current height for both. to much current gun tip height
-                    laserEntity.addComponent<HitBox>(
-                        6 * 0 * sprite.currentScale,
-                        6 * 15 * sprite.currentScale,
-                        6 * 32 * sprite.currentScale,
-                        6 * 1 * sprite.currentScale,
-                        6 * 0 * sprite.currentScale,
-                        6 * 15 * sprite.currentScale,
-                        6 * 32 * sprite.currentScale,
-                        6 * 1 * sprite.currentScale
-                        );
-
                     // Collider
                     // SDL_FRect dest {laserTransform.position.x, laserTransform.position.y, 192, 192};
-                    Collider c = laserEntity.addComponent<Collider>("projectile");
-                    c.rect.w = laserTransform.width;
-                    c.rect.h = laserTransform.height;
+                    laserEntity.addComponent<Collider>("projectile",
+                                                       SDL_FRect(6 * 0 * sprite.currentScale,
+                                                                 6 * 15 * sprite.currentScale,
+                                                                 6 * 32 * sprite.currentScale,
+                                                                 6 * 1 * sprite.currentScale)
+                    );
                 } else {
                     // BOOSTING
                     float scaledAndPositionedNewX =
@@ -114,6 +107,7 @@ void ShootingSystem::update(const std::vector<std::unique_ptr<Entity> > &entitie
                                                                                    scaledAndPositionedNewY),
                                                                                0.0f,
                                                                                1.0f, 192, 192, 6 * 1);
+                    laserTransform.groundZ = transform.groundZ;
                     // Here we apply the scaling data from existing sprite to match scale but add scaled guntip position to align with scaled sprite
                     laserEntity.addComponent<Sprite>(Sprite{
                         .texture = laserTex,
@@ -128,22 +122,11 @@ void ShootingSystem::update(const std::vector<std::unique_ptr<Entity> > &entitie
                     });
 
                     // Add hitbox for laserbeam (this one is natively 192x192)
-                    laserEntity.addComponent<HitBox>(
-                        6 * 0 * sprite.currentScale,
-                        6 * 13 * sprite.currentScale,
-                        6 * 32 * sprite.currentScale,
-                        6 * 1 * sprite.currentScale,
-                        6 * 0 * sprite.currentScale,
-                        6 * 13 * sprite.currentScale,
-                        6 * 32 * sprite.currentScale,
-                        6 * 1 * sprite.currentScale
-                        );
-
-                    // Collider
-                    // SDL_FRect dest {laserTransform.position.x, laserTransform.position.y, 192, 192};
-                    Collider c = laserEntity.addComponent<Collider>("projectile");
-                    c.rect.w = laserTransform.width;
-                    c.rect.h = laserTransform.height;
+                    laserEntity.addComponent<Collider>("projectile",
+                                                       SDL_FRect(6 * 0 * sprite.currentScale,
+                                                                6 * 13 * sprite.currentScale,
+                                                                6 * 32 * sprite.currentScale,
+                                                                6 * 1 * sprite.currentScale));
                 }
             }
 
@@ -155,18 +138,18 @@ void ShootingSystem::update(const std::vector<std::unique_ptr<Entity> > &entitie
                 float scaledAndPositionedNewY = transform.position.y - gun.gunTip1OffsetYScaled + (
                                                     sprite.baseHeight - scaledHeight);
                 // // Laser tag
-                auto& laserProjectile = laserEntity.addComponent<Projectile>(600);
+                auto &laserProjectile = laserEntity.addComponent<Projectile>(600);
                 laserProjectile.ownerID = entity->getID();
 
                 float direction = -1;
                 // Velocity (movement)
-                laserEntity.addComponent<Velocity>(Velocity{{direction, 0}, 180});
+                laserEntity.addComponent<Velocity>(Velocity{{direction, 0}, laserProjectile.speed});
                 // Transform (position)
                 auto &laserTransform = laserEntity.addComponent<Transform>(
                     Vector2D(scaledAndPositionedNewX,
                              scaledAndPositionedNewY),
                     0.0f, 1.0f, 192, 192, 6 * 4);
-                laserTransform.groundY = transform.groundY;
+                laserTransform.groundZ = transform.groundZ;
 
                 SDL_Texture *laserTex = TextureManager::load("../assets/weapon/enemyLaser-quick-shot2.png");
 
@@ -184,22 +167,12 @@ void ShootingSystem::update(const std::vector<std::unique_ptr<Entity> > &entitie
                 });
 
                 // Add hitbox for laserbeam
-                laserEntity.addComponent<HitBox>(
-                    6 * 0 * sprite.currentScale,
+                laserEntity.addComponent<Collider>("projectile",
+                   SDL_FRect( 6 * 0 * sprite.currentScale,
                     6 * 14 * sprite.currentScale,
                     6 * 32 * sprite.currentScale,
-                    6 * 4  * sprite.currentScale,
-                    6 * 0  * sprite.currentScale,
-                    6 * 14 * sprite.currentScale,
-                    6 * 32 * sprite.currentScale,
-                    6 * 4 * sprite.currentScale
-                    );
-
-                // Collider
-                // SDL_FRect dest {laserTransform.position.x, laserTransform.position.y, 192, 192};
-                Collider c = laserEntity.addComponent<Collider>("projectile");
-                c.rect.w = laserTransform.width;
-                c.rect.h = laserTransform.height;
+                    6 * 4 * sprite.currentScale)
+                );
 
                 // laser shadow - to show depth to player
                 laserEntity.addComponent<Shadow>(1.0, 0.8, 1.0, 180);

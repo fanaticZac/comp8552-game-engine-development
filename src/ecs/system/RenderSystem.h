@@ -16,7 +16,6 @@ class RenderSystem {
 public:
     void render(const std::vector<std::unique_ptr<Entity> > &entities) {
         Entity *cameraEntity = nullptr;
-
         //Find camera
         for (auto &e: entities) {
             if (e->hasComponent<Camera>()) {
@@ -24,9 +23,17 @@ public:
                 break;
             }
         }
-
         if (!cameraEntity) return; // no camera
         auto &cam = cameraEntity->getComponent<Camera>();
+
+        //Find player
+        Entity *playerEntity = nullptr;
+        for (auto &e: entities) {
+            if (e->hasComponent<Player>()) {
+                playerEntity = e.get();
+                break;
+            }
+        }
 
         // NOTE: Sort - by groundY to enable objects to appear in order of depth (lasers/player/enemies) --------
         // latest rendered is on top
@@ -35,7 +42,67 @@ public:
 
         for (auto &e: entities)
             sorted.push_back(e.get());
-        std::stable_sort(sorted.begin(), sorted.end(), compareByGroundY);
+        std::stable_sort(sorted.begin(), sorted.end(),
+                         [playerEntity](Entity *a, Entity *b) {
+                             bool aRenderable = a->hasComponent<Transform>() && a->hasComponent<Sprite>();
+                             bool bRenderable = b->hasComponent<Transform>() && b->hasComponent<Sprite>();
+
+                             auto &aTransform = a->getComponent<Transform>();
+                             auto &bTransform = b->getComponent<Transform>();
+
+                             if (!aRenderable && !bRenderable) return false;
+                             if (!aRenderable && bRenderable) return true;
+                             if (aRenderable && !bRenderable) return false;
+
+                             // --- SPECIAL CASE: player behind obstacle ---
+                             // if (playerEntity) {
+                             //     auto &playerProperties = playerEntity->getComponent<Player>();
+                             //     int obstacleID = playerProperties.isStandingBehindObstacleEntityID;
+                             //
+                             //     if (obstacleID != -1) {
+                             //         // If a is the player and b is the obstacle, a comes first
+                             //         if (a == playerEntity && b->getID() == obstacleID) return true;
+                             //         // If b is the player and a is the obstacle, b comes first
+                             //         if (b == playerEntity && a->getID() == obstacleID) return false;
+                             //     }
+                             // }
+
+                             // --- DEFAULT: sort by groundZ ---
+                             // Don't recommend changing - it works for the projectiles and player so player can move behind back and front of cube with offset working.
+                             float aGroundZ = (a->hasComponent<Obstacle>())
+                                                  ? aTransform.groundZ - (aTransform.height - aTransform.depth)
+                                                  : aTransform.groundZ;
+                             float bGroundZ = (b->hasComponent<Obstacle>())
+                                                  ? bTransform.groundZ - (aTransform.height - aTransform.depth)
+                                                  : bTransform.groundZ;
+
+                             return aGroundZ < bGroundZ;
+                         }
+        );
+
+        // NOTE: After sort - we check if we need to adjust player and wall order for 3D effect
+        // if (playerEntity) {
+        //     auto& playerProperties = playerEntity->getComponent<Player>();
+        //
+        //     if (playerProperties.isStandingBehindObstacleEntityID != -1) {
+        //         int behindID = playerProperties.isStandingBehindObstacleEntityID;
+        //
+        //         int playerIndex = -1;
+        //         int obstacleIndex = -1;
+        //
+        //         // Find indices of player and the obstacle in the sorted list
+        //         for (int i = 0; i < sorted.size(); i++) {
+        //             if (sorted[i] == playerEntity) playerIndex = i;
+        //             if (sorted[i]->getID() == behindID) obstacleIndex = i;
+        //         }
+        //
+        //         // Move obstacle in front of player if needed
+        //         if (playerIndex != -1 && obstacleIndex != -1 && obstacleIndex < playerIndex) {
+        //             std::swap(sorted[playerIndex], sorted[obstacleIndex]);
+        //         }
+        //     }
+        // }
+
 
         for (auto &entity: sorted) {
             if (entity->hasComponent<Transform>() && entity->hasComponent<Sprite>()) {
@@ -67,9 +134,11 @@ public:
                 if (entity->hasComponent<Shadow>()) {
                     auto &shadow = entity->getComponent<Shadow>();
                     SDL_FRect dst;
-                    dst.x = (entity->hasComponent<Projectile>())? shadow.renderX - 96 - cam.view.x: shadow.renderX - 32 - cam.view.x;
+                    dst.x = (entity->hasComponent<Projectile>())
+                                ? shadow.renderX - 96 - cam.view.x
+                                : shadow.renderX - 32 - cam.view.x;
                     dst.y = shadow.renderY - 32 - cam.view.y;
-                    dst.w = (entity->hasComponent<Projectile>())? 192 * shadow.currentScale : 64 * shadow.currentScale;
+                    dst.w = (entity->hasComponent<Projectile>()) ? 192 * shadow.currentScale : 64 * shadow.currentScale;
                     dst.h = 64 * shadow.currentScale;
 
                     SDL_SetTextureAlphaMod(shadow.texture, shadow.currentAlpha);
@@ -79,35 +148,44 @@ public:
                 TextureManager::draw(sprite.texture, sprite.src, sprite.dst);
 
                 // Draw debug sprite on top - so comes after
-                if (entity->hasComponent<DebugSprite>()) {
-                    auto& debugSprite = entity->getComponent<DebugSprite>();
-                    // Keep it same as normal render, offset by camera
-                    SDL_FRect dst = debugSprite.dst;
-                    dst.x -= cam.view.x;
-                    dst.y -= cam.view.y;
-                    TextureManager::draw(debugSprite.texture, debugSprite.src, dst);
+                if (entity->hasComponent<DebugSprites>()) {
+                    auto &dbg = entity->getComponent<DebugSprites>();
+
+                    for (auto &s: dbg.sprites) {
+                        SDL_FRect dst = s.dst;
+                        dst.x -= cam.view.x;
+                        dst.y -= cam.view.y;
+                        TextureManager::draw(s.texture, s.src, dst);
+                    }
                 }
             }
         }
     }
 
 private:
-    static bool compareByGroundY(Entity *a, Entity *b) {
-        bool aRenderable = a->hasComponent<Transform>() && a->hasComponent<Sprite>();
-        bool bRenderable = b->hasComponent<Transform>() && b->hasComponent<Sprite>();
-
-        if (!aRenderable && !bRenderable)
-            return false;
-
-        if (!aRenderable && bRenderable)
-            return true;
-
-        if (aRenderable && !bRenderable)
-            return false;
-
-        return a->getComponent<Transform>().groundY <
-               b->getComponent<Transform>().groundY;
-    }
+    // static bool compareByGroundY(Entity *a, Entity *b) {
+    //     bool aRenderable = a->hasComponent<Transform>() && a->hasComponent<Sprite>();
+    //     bool bRenderable = b->hasComponent<Transform>() && b->hasComponent<Sprite>();
+    //     auto &aTransform = a->getComponent<Transform>();
+    //     auto &bTransform = a->getComponent<Transform>();
+    //
+    //     if (!aRenderable && !bRenderable)
+    //         return false;
+    //
+    //     if (!aRenderable && bRenderable)
+    //         return true;
+    //
+    //     if (aRenderable && !bRenderable)
+    //         return false;
+    //
+    //     // For walls only
+    //     // 192x192 is image of cube, 128x182 is cube within it.
+    //     // Player should be on top when player free in front of back edge of image.
+    //     float aGroundZ = (a->hasComponent<ObstacleTag>()) ? aTransform.groundZ - aTransform.depth : aTransform.groundZ;
+    //     float bGroundZ = (b->hasComponent<ObstacleTag>()) ? bTransform.groundZ - bTransform.depth : bTransform.groundZ;
+    //
+    //     return aGroundZ < bGroundZ;
+    // }
 };
 
 #endif //COMP8552_FINAL_PROJECT_RENDERSYSTEM_H

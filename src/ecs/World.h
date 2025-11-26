@@ -64,7 +64,7 @@ class World {
             //keyboord inputs -> movement, so order matters
 
             physicsSystem.update(entities, dt);
-            movementSystem.update(entities, dt); // AFTER PHYSICS AND KEYBOARD
+            movementSystem.update(entities, dt);
             collisionSystem.update(*this);
             animationSystem.update(entities, dt);
             cameraSystem.update(entities);
@@ -74,9 +74,8 @@ class World {
             enemyBehaviorSystem.update(entities, dt);
             shootingSystem.update(entities, *this, dt);
             levelGenerationSystem.update(entities, *this, dt);
-            // hitBoxDebugSystem.update(entities); // Uncomment for visual hitboxs
+            hitBoxDebugSystem.update(entities); // Uncomment for visual hitboxs
             destructionSystem.update(entities);
-            // TODO - convert map to it's own class (LevelSystem)
             map.updateParallaxBackground(dt);
             map.updateLevelScroll(dt);
         }

@@ -11,11 +11,15 @@
 void LevelGenerationSystem::update(const std::vector<std::unique_ptr<Entity> > &entities, World &world, float dt) {
     bool enemyExists = false;
 
+    int activeWalls = 0;
+
     // We only want to generate enemy if no enemy exists
     for (auto &e: entities) {
+        if (e->hasComponent<Obstacle>() && e->isActive()) activeWalls++;
+
         if (e->hasComponent<Enemy>() && e->isActive()) {
             enemyExists = true;
-            break;
+            // break;
         }
     }
 
@@ -31,16 +35,94 @@ void LevelGenerationSystem::update(const std::vector<std::unique_ptr<Entity> > &
             spawnTimer = spawnInterval;
         }
 
-        // TODO - NEXT ADD THE MOVING 'WALL' OBSTACLES. - also check collision code
-        // // 1) WALL spawner: Uses normal timed spawner
-        // if (entity->hasComponent<TimedSpawner>()) {
-        //     auto& spawner = entity->getComponent<TimedSpawner>();
-        //     spawner.timer -= dt;
-        //     if (spawner.timer <= 0) {
-        //         spawner.timer = spawner.spawnInterval;
-        //         spawner.spawnCallback();
-        //     }
-        // }
+        // 1) WALL spawner: Uses normal timed spawner
+        if (activeWalls < maxWalls) {
+            wallSpawnTimer -= dt;
+            if (wallSpawnTimer <= 0.0f) {
+                spawnWallObstacle(world);
+                wallSpawnTimer = wallSpawnInterval;
+            }
+        }
+    }
+}
+
+
+void LevelGenerationSystem::spawnWallObstacle(World &world) {
+    // std::cout << "Wall obstacle created" << std::endl;
+
+    SDL_Texture *tex = TextureManager::load("../assets/level/Obstacles1.png");
+
+    const int frameW = 192;
+    const int frameH = 192;
+    const int frameD = 128; // same as vertical offset 64 - depth is fake but used for hitbox horizontal alignment in 2.5D
+
+    // Spawn position
+    // int minY = world.getMap().playerGroundTop - 128;
+    int maxY = world.getMap().screenBottom - 192;
+
+    // Just manually doing this
+    int startingYArray[] = {224, 288, 352, 416, 480, 544};
+    float baseY = (float) startingYArray[rand() % 6];
+    float baseX = world.getMap().screenRight; // Spawn off-screen right
+    int verticalStep = 64;
+    int segmentPotentials = (maxY - baseY) / verticalStep;
+    if (segmentPotentials < 1) segmentPotentials = 1;
+    int segments = rand() % segmentPotentials + 1;
+
+    for (int i = 0; i < segments; i++) {
+        // Offset each segment 64px right & 64px down - for alignment of rows
+        float x = baseX + (i * 64.0f);
+        float y = baseY + (i * 64.0f);
+
+
+        auto &wall(world.createEntity());
+        wall.addComponent<Obstacle>();
+        // wall.addComponent<ScaleThisObjectByDistance>();
+
+        // Transform
+        auto &transform = wall.addComponent<Transform>(
+            Vector2D(x, y),
+            0.0f,
+            1.0f,
+            frameW,
+            frameH,
+            frameD
+        );
+        transform.groundZ = y;
+
+        // Moving left
+        wall.addComponent<Velocity>(Vector2D(-1, 0), 180.0f);
+
+        // Sprite (first 192x192 region)
+        SDL_FRect src{0, 0, (float) frameW, (float) frameH};
+        SDL_FRect dst{x, y, (float) frameW, (float) frameH};
+
+        auto &sprite = wall.addComponent<Sprite>();
+        sprite.texture = tex;
+        sprite.src = src;
+        sprite.dst = dst;
+        sprite.baseWidth = frameW;
+        sprite.baseHeight = frameH;
+
+        // Collider
+        // NOTE: For player, HB1 is on ground, HB2 is when boosting
+        // NOTE: For cube obstacle, HB1 is front of box, HB2 is back of box, and
+        // NOTE: - depth is used to create that 45 degree angle matching the sprite
+        auto &hb = wall.addComponent<Collider>("wall", SDL_FRect(0, 0, 4 * 32, 4 * 32), SDL_FRect(64, 64, 4 * 32, 4 * 32));
+        // hb.hitBox3offsetXScaled = 48, hb.hitBox3offsetYScaled = 48, hb.hitBox3widthScaled = 4 * 32, hb.
+        //         hitBox3heightScaled = 4 * 32;
+        // hb.hitBox4offsetXScaled = 40, hb.hitBox4offsetYScaled = 40, hb.hitBox4widthScaled = 4 * 32, hb.
+        //         hitBox4heightScaled = 4 * 32;
+        // hb.hitBox5offsetXScaled = 32, hb.hitBox5offsetYScaled = 0, hb.hitBox5widthScaled = 4 * 32, hb.
+        //         hitBox5heightScaled = 4 * 32;
+        // hb.hitBox6offsetXScaled = 24, hb.hitBox6offsetYScaled = 24, hb.hitBox6widthScaled = 4 * 32, hb.
+        //         hitBox6heightScaled = 4 * 32;
+        // hb.hitBox7offsetXScaled = 16, hb.hitBox7offsetYScaled = 16, hb.hitBox7widthScaled = 4 * 32, hb.
+        //         hitBox7heightScaled = 4 * 32;
+        // hb.hitBox8offsetXScaled = 8, hb.hitBox8offsetYScaled = 8, hb.hitBox8widthScaled = 4 * 32, hb.hitBox8heightScaled
+        //         = 4 * 32;
+
+        // std::cout << "Created wall segment " << i+1 << "/" << segments << std::endl;
     }
 }
 
@@ -63,16 +145,16 @@ void LevelGenerationSystem::spawnEnemy1(World &world) {
     }; // last 2 character size
     enemy1.addComponent<Sprite>(enemy1_tex, enemy1Src, enemy1Dst, enemy1Transform.width, enemy1Transform.height);
     // Collider
-    auto &enemy1Collider = enemy1.addComponent<Collider>("enemy1");
-    enemy1Collider.rect.w = enemy1Dst.w;
-    enemy1Collider.rect.h = enemy1Dst.h;
+    // auto &enemy1Collider = enemy1.addComponent<Collider>("enemy1");
+    // enemy1Collider.hitBox1base.w = enemy1Dst.w;
+    // enemy1Collider.hitBox1base.h = enemy1Dst.h;
     std::cout << "Enemy created" << std::endl;
     // Other Systems
     enemy1.addComponent<Enemy>();
     enemy1.addComponent<ScaleThisObjectByDistance>();
     enemy1.addComponent<EnemyBehavior>();
     enemy1.addComponent<Health>(2);
-    enemy1.addComponent<HitBox>(6 * 11, 6 * 0, 6 * 13, 6 * 32, 6 * 11, 6 * 0, 6 * 13, 6 * 32);
+    enemy1.addComponent<Collider>("enemy1", SDL_FRect(6 * 11, 6 * 0, 6 * 13, 6 * 32), SDL_FRect(6 * 11, 6 * 0, 6 * 13, 6 * 32));
     // ^*at 192x192 - 2 hit boxes, 2nd for boosting
     enemy1.addComponent<Gun>(6 * 16, 6 * 0, 6 * 16, 6 * 0);
 

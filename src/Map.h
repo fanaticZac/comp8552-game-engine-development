@@ -26,7 +26,7 @@ public:
     static const int screenLeft = 0;
     static const int screenRight = 1280;
     static const int screenTop = 0;
-    static const int screenBottom = 720;
+    static const int screenBottom = 736; // 23 tiles * 32 pixels
     static const int playerGroundHeight = 384; // 12 tiles * 32 pixels
     static const int skyAreaHeight = 352; // 11 tiles * 32 pixels
 

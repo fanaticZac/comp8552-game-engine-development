@@ -25,7 +25,7 @@ public:
             if (!e->hasComponent<EnemyBehavior>() ||
                 !e->hasComponent<Transform>() ||
                 !e->hasComponent<Velocity>() ||
-                !e->hasComponent<HitBox>())
+                !e->hasComponent<Collider>())
             {
                 continue;
             }
@@ -33,7 +33,7 @@ public:
             auto& behavior  = e->getComponent<EnemyBehavior>();
             auto& transform = e->getComponent<Transform>();
             auto& velocity  = e->getComponent<Velocity>();
-            auto& hitBox    = e->getComponent<HitBox>();
+            auto& collider    = e->getComponent<Collider>();
 
             // NOTE: This starting code works properly with the in game boundaries
             // NOTE: -- and allow me to work on the shooting, hit boxes and health components
@@ -66,8 +66,8 @@ public:
             float maxX = Map::screenRight - transform.width - characterHorizontalBoundarySpacing;
             float minGround = Map::playerGroundTop - transform.height + characterVerticalBoundarySpacing;
             float maxGround = Map::playerGroundBottom - transform.height + characterVerticalBoundarySpacing;
-            float minY = transform.groundY - transform.height + characterVerticalBoundarySpacing;
-            float maxY = transform.groundY;
+            float minY = transform.groundZ - transform.height + characterVerticalBoundarySpacing;
+            float maxY = transform.groundZ;
 
 
             // Horizontal movement
@@ -81,13 +81,13 @@ public:
             velocity.speed = behavior.movementSpeedX;
 
             // groundy or depth simulation
-            if (behavior.directionGround < 0 && transform.groundY <= minGround) {
+            if (behavior.directionGround < 0 && transform.groundZ <= minGround) {
                 behavior.directionGround = 1; // flip down
-            } else if (behavior.directionGround > 0 && transform.groundY >= maxGround) {
+            } else if (behavior.directionGround > 0 && transform.groundZ >= maxGround) {
                 behavior.directionGround = -1; // flip up
             }
             float moveGround = behavior.directionGround * behavior.movementSpeedGroundY * dt;
-            transform.groundY += moveGround;
+            transform.groundZ += moveGround;
 
             // vertical movement - from current groundY upward
             if (behavior.directionY < 0 && transform.position.y <= minY) {
@@ -151,8 +151,8 @@ public:
                     behavior.charging = false;
 
                     // Up and over - to match animation -
-                    velocity.speed = 120;
-                    velocity.direction = {-1, -0.5};
+                    velocity.speed = 180;
+                    velocity.direction = {-1, -1};
 
                     // Track dying animation time
                     behavior.stateTimer += dt;
@@ -161,7 +161,7 @@ public:
                     // After 1st animation frame - remove
                     if (behavior.stateTimer >= 3.0f/6) {
                         e->deactivateComponent<Shadow>();
-                        e->deactivateComponent<Collider>();
+                        // e->deactivateComponent<Collider>();
                     }
 
                     // NOTE: MATCH animation total

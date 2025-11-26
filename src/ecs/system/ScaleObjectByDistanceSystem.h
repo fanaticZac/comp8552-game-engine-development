@@ -26,17 +26,17 @@ public:
                 // Get ratio for scaling
                 float depthMin = 127.24f; // literal vertical screen pixels (at bottom of screen), min value for groundY
                 float depthMax = 526.24f; // max value for groundY
-                float depthRatio = 1.0f - std::clamp((transform.groundY - depthMin) / (depthMax - depthMin), 0.0f, 1.0f);
+                float depthRatio = 1.0f - std::clamp((transform.groundZ - depthMin) / (depthMax - depthMin), 0.0f, 1.0f);
 
                 float heightMinAtMaxDepth = 202.095; // Height Above Ground: 568.418 from debug at max depth
                 float heightMaxAtMinDepth = 568.418; // Height Above Ground: 202.095 from debug at min depth
 
                 // old, without dept consideration
-                float heightMin = transform.groundY;
+                float heightMin = transform.groundZ;
                 float expectedHeightAtCurrentDepth = heightMinAtMaxDepth +
                                                      (heightMaxAtMinDepth - heightMinAtMaxDepth) * (depthRatio);
 
-                float heightAboveGround = transform.groundY - transform.position.y;
+                float heightAboveGround = transform.groundZ - transform.position.y;
                 // float heightRatio = 1.0f - std::clamp((heightAboveGround - heightMin) / (heightMaxAtMinDepth - heightMin), 0.0f,
                 //                                       1.0f);
                 float heightRatio = 1.0f - std::clamp(
@@ -63,21 +63,43 @@ public:
                     gun.gunTip2OffsetYScaled = gun.gunTip2BaseOffsetY * sprite.currentScale;
                 }
 
-                if (e->hasComponent<HitBox>()) {
-                    auto &hitBox = e->getComponent<HitBox>();
-                    // Compute the scaled hitbox values from base values:
-                    hitBox.hitBox1widthScaled = hitBox.hitBox1baseWidth * sprite.currentScale;
-                    hitBox.hitBox1heightScaled = hitBox.hitBox1baseHeight * sprite.currentScale;
+                if (e->hasComponent<Collider>()) {
+                    auto &collider = e->getComponent<Collider>();
 
-                    hitBox.hitBox1offsetXScaled = hitBox.hitBox1baseOffsetX * sprite.currentScale + (
-                                                sprite.baseWidth - scaledWidth) / 2.0f;
-                    hitBox.hitBox1offsetYScaled = hitBox.hitBox1baseOffsetY * sprite.currentScale + (
-                                                sprite.baseHeight - scaledHeight);
+                    // HB1
+                    collider.hitBox1Scaled.x = collider.hitBox1base.x * sprite.currentScale +
+                                               (sprite.baseWidth - scaledWidth) / 2.0f;
 
-                    hitBox.hitBox2offsetXScaled = hitBox.hitBox2baseOffsetX * sprite.currentScale + (
-                                                sprite.baseWidth - scaledWidth) / 2.0f;
-                    hitBox.hitBox2offsetYScaled = hitBox.hitBox2baseOffsetY * sprite.currentScale + (
-                                                sprite.baseHeight - scaledHeight);
+                    collider.hitBox1Scaled.y = collider.hitBox1base.y * sprite.currentScale +
+                                               (sprite.baseHeight - scaledHeight);
+
+                    collider.hitBox1Scaled.w = collider.hitBox1base.w * sprite.currentScale;
+                    collider.hitBox1Scaled.h = collider.hitBox1base.h * sprite.currentScale;
+
+                    // HB2
+                    collider.hitBox2Scaled.x = collider.hitBox2base.x * sprite.currentScale +
+                                               (sprite.baseWidth - scaledWidth) / 2.0f;
+
+                    collider.hitBox2Scaled.y = collider.hitBox2base.y * sprite.currentScale +
+                                               (sprite.baseHeight - scaledHeight);
+
+                    collider.hitBox2Scaled.w = collider.hitBox2base.w * sprite.currentScale;
+                    collider.hitBox2Scaled.h = collider.hitBox2base.h * sprite.currentScale;
+
+                    // hitBox.hitBox1widthScaled = hitBox.hitBox1baseWidth * sprite.currentScale;
+                    // hitBox.hitBox1heightScaled = hitBox.hitBox1baseHeight * sprite.currentScale;
+                    // hitBox.hitBox1offsetXScaled = hitBox.hitBox1baseOffsetX * sprite.currentScale + (
+                    //                             sprite.baseWidth - scaledWidth) / 2.0f;
+                    // hitBox.hitBox1offsetYScaled = hitBox.hitBox1baseOffsetY * sprite.currentScale + (
+                    //                             sprite.baseHeight - scaledHeight);
+                    //
+                    // // HB2 - DONE
+                    // hitBox.hitBox2widthScaled = hitBox.hitBox2baseWidth * sprite.currentScale;
+                    // hitBox.hitBox2heightScaled = hitBox.hitBox2baseHeight * sprite.currentScale;
+                    // hitBox.hitBox2offsetXScaled = hitBox.hitBox2baseOffsetX * sprite.currentScale + (
+                    //                             sprite.baseWidth - scaledWidth) / 2.0f;
+                    // hitBox.hitBox2offsetYScaled = hitBox.hitBox2baseOffsetY * sprite.currentScale + (
+                    //                             sprite.baseHeight - scaledHeight);
                 }
 
 

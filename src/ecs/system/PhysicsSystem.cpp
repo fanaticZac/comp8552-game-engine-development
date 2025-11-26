@@ -17,15 +17,18 @@ void PhysicsSystem::update(std::vector<std::unique_ptr<Entity> > &entities, floa
         if (entity->hasComponent<Transform>() &&
             entity->hasComponent<Physics>() &&
             entity->hasComponent<Boost>() &&
-            entity->hasComponent<HitBox>() &&
+            entity->hasComponent<Collider>() &&
             entity->hasComponent<Input>() &&
             entity->hasComponent<Velocity>()) {
             auto &transform = entity->getComponent<Transform>();
             auto &physics = entity->getComponent<Physics>();
             auto &boost = entity->getComponent<Boost>();
             auto &velocity = entity->getComponent<Velocity>();
-            auto &hitBox = entity->getComponent<HitBox>();
+            auto &collider = entity->getComponent<Collider>();
             auto &input = entity->getComponent<Input>();
+            auto &playerProperties = entity->getComponent<Player>();
+
+            transform.oldPosition = transform.position;
 
             // X axis  - Horizontal movement and physics ----------------------------
             // Take the unadulterated input from Velocity componenet
@@ -40,7 +43,7 @@ void PhysicsSystem::update(std::vector<std::unique_ptr<Entity> > &entities, floa
             // In air: ignore inputs, just keep existing velocity.x
             // no change to physics.velocity.x
             // Grounded: only move if input given
-            if (physics.grounded && velocity.direction.x == 0.0f) {
+            if ((physics.grounded || playerProperties.isStandingOnObstacle) && velocity.direction.x == 0.0f) {
                 physics.velocity.x = 0.0f;
             }
 
@@ -62,10 +65,11 @@ void PhysicsSystem::update(std::vector<std::unique_ptr<Entity> > &entities, floa
                 float depthMin = 127.24f; // bottom of screen
                 float depthMax = 526.24f; // top-ish (or whatever max Y for your depth system)
                 //
-                float depthRatioFasterFarther = 1.0f - std::clamp((transform.groundY - depthMin) / (depthMax - depthMin),
-                                                                  0.0f, 1.0f);
+                float depthRatioFasterFarther = 1.0f - std::clamp(
+                                                    (transform.groundZ - depthMin) / (depthMax - depthMin),
+                                                    0.0f, 1.0f);
 
-                float depthRatioFasterCloser = std::clamp((transform.groundY - depthMin) / (depthMax - depthMin), 0.0f,
+                float depthRatioFasterCloser = std::clamp((transform.groundZ - depthMin) / (depthMax - depthMin), 0.0f,
                                                           1.0f);
 
                 float depthSpeedFactorFasterFarther = 0.5f + 0.5f * depthRatioFasterFarther;
@@ -76,10 +80,10 @@ void PhysicsSystem::update(std::vector<std::unique_ptr<Entity> > &entities, floa
                 // NOTE: for example, boosting and move up in Y on level otherwise appears that boost is not accelerating upward, but floating at same height
                 physics.velocity.y = -boost.boostYVelocity * depthSpeedFactorFasterCloser;
 
-                if (input.moveBottom && !input.moveTop && transform.groundY <= depthMax) {
+                if (input.moveBottom && !input.moveTop && transform.groundZ <= depthMax) {
                     // GOOD, Appears to float, but because player is moving down a 45 degree slope - looks good
                     // only groundY is changing / appa
-                } else if (input.moveTop && !input.moveBottom && transform.groundY >= depthMin) {
+                } else if (input.moveTop && !input.moveBottom && transform.groundZ >= depthMin) {
                     // We add velocity - because it's boosting up y and also moving up 45 degrees in camera persective of level
                     transform.position.y += physics.velocity.y * dt * 1.707; // number is arbitary
                     // transform.position.y += physics.velocity.y * dt * 2;
@@ -99,9 +103,9 @@ void PhysicsSystem::update(std::vector<std::unique_ptr<Entity> > &entities, floa
 
             // TODO - MOVE TO COLLUSION SYSTEM - probably - pondering
             // --- Ground collision ---
-            if (transform.position.y > transform.groundY) {
+            if (transform.position.y > transform.groundZ) {
                 // y increases downward
-                transform.position.y = transform.groundY;
+                transform.position.y = transform.groundZ;
                 physics.velocity.y = 0;
                 physics.grounded = true;
             } else {
@@ -114,22 +118,28 @@ void PhysicsSystem::update(std::vector<std::unique_ptr<Entity> > &entities, floa
             // I will add some padding through now - remove padding to test hit box.
 
             // BEST NOT TO TOUCH THIS - FULLY TESTED BOUNDARY - IT'S TIME-CONSUMING TO RETEST......
-            float characterVerticalBoundarySpacing = 12.0f;  // Don't change VERTICAL lightly - debug exact outputs - been used for parameters in CharacterScale
+            float characterVerticalBoundarySpacing = 12.0f;
+            // Don't change VERTICAL lightly - debug exact outputs - been used for parameters in CharacterScale
             float characterHorizontalBoundarySpacing = 24.0f;
 
             // Top
-            if (transform.position.y + hitBox.hitBox2offsetYScaled - characterVerticalBoundarySpacing <= Map::screenTop) {
-                transform.position.y = Map::screenTop - hitBox.hitBox2offsetYScaled + characterVerticalBoundarySpacing;
+            if (transform.position.y + collider.hitBox2Scaled.y - characterVerticalBoundarySpacing <=
+                Map::screenTop) {
+                transform.position.y = Map::screenTop - collider.hitBox2Scaled.y + characterVerticalBoundarySpacing;
             }
 
             // Left
-            if (transform.position.x + hitBox.hitBox2offsetXScaled - characterHorizontalBoundarySpacing <= Map::screenLeft) {
-                transform.position.x = Map::screenLeft - hitBox.hitBox2offsetXScaled + characterHorizontalBoundarySpacing;
+            if (transform.position.x + collider.hitBox2Scaled.x - characterHorizontalBoundarySpacing <=
+                Map::screenLeft) {
+                transform.position.x = Map::screenLeft - collider.hitBox2Scaled.x +
+                                       characterHorizontalBoundarySpacing;
             }
 
             // Right
-            if (transform.position.x + hitBox.hitBox2offsetXScaled + hitBox.hitBox2widthScaled + characterHorizontalBoundarySpacing >= Map::screenRight) {
-                transform.position.x = Map::screenRight - hitBox.hitBox2offsetXScaled - hitBox.hitBox2widthScaled - characterHorizontalBoundarySpacing;
+            if (transform.position.x + collider.hitBox2Scaled.x + collider.hitBox2Scaled.w +
+                characterHorizontalBoundarySpacing >= Map::screenRight) {
+                transform.position.x = Map::screenRight - collider.hitBox2Scaled.x - collider.hitBox2Scaled.w -
+                                       characterHorizontalBoundarySpacing;
             }
 
             // DEBUG - keep

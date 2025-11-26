@@ -25,12 +25,18 @@ public:
 
                 // Place shadow directly under entity
                 s.renderX = t.position.x + (t.width / 2);
-                s.renderY = t.groundY + t.width;
+                s.renderY = t.groundZ + t.height;
 
                 // std::cout << "Shadow position is  X: " << s.renderX << ", Y: " << t.groundY << std::endl;
 
                 // Shrink shadow and change opaque alpha based on vertical position
-                float height = t.groundY - t.position.y;
+                float height = t.groundZ - t.position.y;
+
+                // If standing on 'wall' - shadow just below player.
+                // if (entity->hasComponent<Player>() && entity->getComponent<Player>().isStandingOnObstacle) {
+                //     height = 0;
+                // }
+
                 if (height < 0) height = 0;
 
                 float strength = 1000.0f;

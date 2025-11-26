@@ -34,12 +34,8 @@ Scene::Scene(SceneType sceneType, const char *sceneName, const char *mapPath, co
     // make map colliders entities
     for (auto &collider: world.getMap().colliders) {
         auto& e = world.createEntity();
-        e.addComponent<Transform>(Vector2D(collider.rect.x, collider.rect.y), 0.0f, 1.0f);
-        auto& c = e.addComponent<Collider>("wall");
-        c.rect.x = collider.rect.x;
-        c.rect.y = collider.rect.y;
-        c.rect.w = collider.rect.w;
-        c.rect.h = collider.rect.h;
+        e.addComponent<Transform>(Vector2D(collider.hitBox1base.x, collider.hitBox1base.y), 0.0f, 1.0f);
+        auto& c = e.addComponent<Collider>("wall", SDL_FRect(collider.hitBox1base.x, collider.hitBox1base.y, collider.hitBox1base.w, collider.hitBox1base.h));
 
         // TO ADD THE COLLIDER DEBUG
         // SDL_Texture* tex = TextureManager::load("../assets/+old_assets/tileset.png");
@@ -65,9 +61,7 @@ Scene::Scene(SceneType sceneType, const char *sceneName, const char *mapPath, co
         SDL_FRect itemDst { itemTransform.position.x, itemTransform.position.y, 32, 32};
         // item.addComponent<Sprite>(itemTex, itemSrc, itemDst);
 
-        auto& itemCollider = item.addComponent<Collider>("item");
-        itemCollider.rect.w = itemDst.w;
-        itemCollider.rect.h = itemDst.h;
+        auto& itemCollider = item.addComponent<Collider>("item", SDL_FRect(itemTransform.position.x, itemTransform.position.y, itemDst.w, itemDst.h));
     }
 
     // PLAYER START
@@ -95,11 +89,7 @@ Scene::Scene(SceneType sceneType, const char *sceneName, const char *mapPath, co
     SDL_FRect playerDst {playerTransform.position.x, playerTransform.position.y, playerTransform.width, playerTransform.height}; // last 2 character size
     player.addComponent<Sprite>(tex, playerSrc, playerDst, playerTransform.width, playerTransform.height);
 
-    auto& playerCollider = player.addComponent<Collider>("player");
-    playerCollider.rect.w = playerDst.w;
-    playerCollider.rect.h = playerDst.h;
-
-    player.addComponent<PlayerTag>();
+    player.addComponent<Player>();
     player.addComponent<Health>(Game::gameState.playerHealth);
     player.addComponent<Boost>();
     player.addComponent<Physics>();
@@ -108,7 +98,7 @@ Scene::Scene(SceneType sceneType, const char *sceneName, const char *mapPath, co
     // I counted hit box pixels at 32x32 but this is scaled to 192x192, so times everything by 6
     // leftOffset: 14, width:5 (14-18), topOffset
     // player.addComponent<HitBox>(13, 11, 5, 21, 13, 9, 5, 23); // 2 hit boxes, one for boosting
-    player.addComponent<HitBox>(6*13, 6*11, 6*5, 6*21, 6*13, 6*9, 6*5, 6*23); // ^*at 192x192 - 2 hit boxes, 2nd for boosting
+    player.addComponent<Collider>("player", SDL_FRect(6*13, 6*11, 6*5, 6*21), SDL_FRect(6*13, 6*9, 6*5, 6*23)); // ^*at 192x192 - 2 hit boxes, 2nd for boosting
     player.addComponent<Gun>(6*24, 0, 6*24, 0); // Gun tip is embedded to match in image.
     // Shadow for player
     player.addComponent<Shadow>();

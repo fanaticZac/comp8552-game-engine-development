@@ -18,7 +18,7 @@ public:
 
         //find the player
         for (auto& e: entities) {
-            if (e->hasComponent<PlayerTag>()) {
+            if (e->hasComponent<Player>()) {
                 playerEntity = e.get();
                 break;
             }

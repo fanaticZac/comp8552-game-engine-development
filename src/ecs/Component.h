@@ -5,7 +5,9 @@
 #ifndef COMP8552_FINAL_PROJECT_COMPONENT_H
 #define COMP8552_FINAL_PROJECT_COMPONENT_H
 
+#include <cmath>
 #include <functional>
+#include <iostream>
 #include <SDL3/SDL_render.h>
 
 #include "../utils/Vector2D.h"
@@ -21,7 +23,7 @@ struct Transform {
     float scale{};
     float width{};
     float height{};
-    float depthWidth{}; // for use with groundY hitboxes (probably same as width is entity is cylindrical)
+    float depth{};
     Vector2D oldPosition{};
     // Tried using Vector3D but it got confusing...
     // We really just want to track the existing groundY
@@ -29,8 +31,8 @@ struct Transform {
     // So when player moves this is same as position.y (without phsyics)
     // but only changes when W/S is pressed - not when boost
     // This will also be used for alignment for collisions in 2.5D
-    float groundY = 400;
-    float oldGroundY = 400;
+    float groundZ = 400;
+    float oldGroundZ = 400;
 };
 
 // Velocity = player input intent (direction + speed)
@@ -52,22 +54,73 @@ struct Sprite {
     float currentScale = 1.0f;
 };
 
-struct DebugSprite { // For hitbox visual debugging system
-    SDL_Texture *texture = nullptr;
-    SDL_FRect src{};
-    SDL_FRect dst{};
-
-    // Added
-    float baseWidth = 192;
-    float baseHeight = 192;
-    float maxScale = 1.0f;
-    float minScale = 0.707;
-    float currentScale = 1.0f;
+struct DebugSprites {
+    std::vector<Sprite> sprites;
 };
 
 struct Collider {
     std::string tag;
-    SDL_FRect rect{};
+    // For player: HB1 is grounded, HB2 is in flight
+    // For obstacles (rectangular prisms) HB1 is front square, HB2 is back square - and we interpolate
+    // HB3 is for obstacles - to create a dynamic HB interpolated between HB1 and HB2 based on GroundZ values of colliding entities
+    SDL_FRect hitBox1base{};
+    SDL_FRect hitBox1Scaled{};
+    SDL_FRect hitBox2base{};
+    SDL_FRect hitBox2Scaled{};
+    bool hitbox3_isActive = false;
+    SDL_FRect hitBox3base{};
+    SDL_FRect hitBox3Scaled{};
+
+    Collider() = default;
+
+    Collider(const std::string &collisionTag, const SDL_FRect hitBox1) {
+        // Initialize both base and current at once
+        tag = collisionTag;
+        hitBox1base = hitBox1Scaled = hitBox1;
+        hitBox2base = hitBox2Scaled = hitBox1;
+    }
+
+    Collider(const std::string &collisionTag, const SDL_FRect hitBox1, const SDL_FRect hitBox2) {
+        // Initialize both base and current at once
+        tag = collisionTag;
+        hitBox1base = hitBox1Scaled = hitBox1;
+        hitBox2base = hitBox2Scaled = hitBox2;
+    }
+
+    bool createDynamicHitBox3ForObstacles(float otherGroundZ, float wallGroundZ) {
+        // Determine absolute depth between HB1 and HB2 in X
+        float cubeDepthMaximum =
+            std::fabs(hitBox1Scaled.x - hitBox2Scaled.x);
+
+        if (cubeDepthMaximum == 0.0f)
+            return false;
+
+        // How far "into the cube" the other object is
+        float cubeDepthGroundZ = wallGroundZ - otherGroundZ;
+
+        float groundZ_alpha = cubeDepthGroundZ / cubeDepthMaximum;
+        groundZ_alpha = std::clamp(groundZ_alpha, 0.0f, 1.0f);
+
+        float newCubeHitBoxOffsetValue = cubeDepthMaximum * (1.0f - groundZ_alpha);
+
+        // Activate HB3 and apply interpolated values
+        hitbox3_isActive = true;
+
+        hitBox3Scaled.x = newCubeHitBoxOffsetValue;
+        hitBox3Scaled.y = newCubeHitBoxOffsetValue;
+
+        hitBox3Scaled.w = hitBox2Scaled.w;
+        hitBox3Scaled.h = hitBox2Scaled.h;
+
+        // Debug
+        std::cout << "Collider::createDynamicHitBox3\n";
+        std::cout << "cubeDepthMaximum = " << cubeDepthMaximum << "\n";
+        std::cout << "cubeDepthGroundZ = " << cubeDepthGroundZ << "\n";
+        std::cout << "groundZ_alpha = " << groundZ_alpha << "\n";
+        std::cout << "newCubeHitBoxOffsetValue = " << newCubeHitBoxOffsetValue << "\n";
+
+        return true;
+    }
 };
 
 struct Animation {
@@ -131,7 +184,7 @@ struct Boost {
 struct Physics {
     const float gravityMetersPerSecond = 9.81; // m/s -  we assume that 1 tile is 1 meter
     const float gravityPixelsPerSecond2 = gravityMetersPerSecond * 32; //32 being tile size = 313.92
-    const float xMaxSpeed = 180.0f;
+    const float xMaxSpeed = 240.0f;
     float height = 0.0f; // how far above groundY
     Vector2D velocity{};
     bool grounded = false;
@@ -160,35 +213,9 @@ struct Shadow {
     SDL_Texture *texture = nullptr;
 };
 
-struct HitBox {
-    // Base (reference) hitboxes
-    float hitBox1baseOffsetX = 0, hitBox1baseOffsetY = 0, hitBox1baseWidth = 0, hitBox1baseHeight = 0;
-    float hitBox2baseOffsetX = 0, hitBox2baseOffsetY = 0, hitBox2baseWidth = 0, hitBox2baseHeight = 0;
-
-    // Active hitboxes (scaled/modified)
-    // HITBOX 2 IS FOR ON GROUND
-    float hitBox1offsetXScaled = 0, hitBox1offsetYScaled = 0, hitBox1widthScaled = 0, hitBox1heightScaled = 0;
-    // HITBOX 2 IS FOR BOOSTING (SLIGHT HEIGHT INCREASE)
-    float hitBox2offsetXScaled = 0, hitBox2offsetYScaled = 0, hitBox2widthScaled = 0, hitBox2heightScaled = 0;
-
-    // Just so I can initialize both with same values
-    HitBox(float hb1x, float hb1y, float hb1w, float hb1h,
-           float hb2x, float hb2y, float hb2w, float hb2h) {
-        // Initialize both base and current at once
-        hitBox1baseOffsetX = hitBox1offsetXScaled = hb1x;
-        hitBox1baseOffsetY = hitBox1offsetYScaled = hb1y;
-        hitBox1baseWidth = hitBox1widthScaled = hb1w;
-        hitBox1baseHeight = hitBox1heightScaled = hb1h;
-
-        hitBox2baseOffsetX = hitBox2offsetXScaled = hb2x;
-        hitBox2baseOffsetY = hitBox2offsetYScaled = hb2y;
-        hitBox2baseWidth = hitBox2widthScaled = hb2w;
-        hitBox2baseHeight = hitBox2heightScaled = hb2h;
-    }
-};
 
 struct Projectile {
-    float speed = 360.0f; // pixels/sec
+    float speed = 1000.0f; // pixels/sec
     int damage = 1;
     float lifetime = 2.0f;
     int ownerID = -1;
@@ -211,9 +238,9 @@ struct EnemyBehavior {
     float stateTimer = 0.0f;
 
     // Movement
-    float movementSpeedGroundY = 180.0f;
-    float movementSpeedX = 180.0f;
-    float movementSpeedY = 180.0f;
+    float movementSpeedGroundY = 300.0f;
+    float movementSpeedX = 300.0f;
+    float movementSpeedY = 300.0f;
 
     // Direction
     int directionX = 1;
@@ -233,8 +260,15 @@ struct Enemy { // replaces tag
     int playerCollisionDamage = 1; // aka direct player/enemy collision
 };
 
-//TAG INDICATORS
-struct PlayerTag{}; // can just look for player tag for camera follow
+//TAG INDICATORS2
+struct Player {
+    bool isStandingOnObstacle = false;
+    int isStandingBehindObstacleEntityID = -1;
+}; // can just look for player tag for camera follow
+
+struct Obstacle {
+
+}; // For destruction system to properly delete when leaving camera view.
 struct ScaleThisObjectByDistance {}; // Just enemies/player (shots are scaled in shootingSyste)
 
 
