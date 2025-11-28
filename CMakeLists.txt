@@ -74,7 +74,8 @@ add_executable(comp8552_Final_Project src/main.cpp
         src/ecs/system/LevelGenerationSystem.h
         src/ecs/system/LevelGenerationSystem.cpp
         src/ecs/system/HitBoxDebugSystem.h
-        src/ecs/system/HitBoxDebugSystem.cpp)
+        src/ecs/system/HitBoxDebugSystem.cpp
+        src/ecs/system/HealthSystem.h)
 
 # MY ADDED CONFIG
 target_link_libraries(comp8552_Final_Project

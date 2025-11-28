@@ -37,7 +37,7 @@ void PhysicsSystem::update(std::vector<std::unique_ptr<Entity> > &entities, floa
             // Add base movement speed from movementSystem.
             // FYI - I had a duplicate dt here by mistake - but that made player move in a realistic acceleration -
             // ^^^ note... I don't think ill use it was it had a mario feel
-            physics.velocity += velocity.direction * velocity.speed;
+            physics.velocity.x = velocity.direction.x * velocity.speed;
 
 
             // In air: ignore inputs, just keep existing velocity.x

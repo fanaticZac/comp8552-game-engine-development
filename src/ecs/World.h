@@ -21,6 +21,7 @@
 #include "MovementSystem.h"
 #include "RenderSystem.h"
 #include "EventManager.h"
+#include "HealthSystem.h"
 #include "HitBoxDebugSystem.h"
 #include "LevelGenerationSystem.h"
 #include "PhysicsSystem.h"
@@ -53,6 +54,7 @@ class World {
     EnemyBehaviorSystem enemyBehaviorSystem;
     LevelGenerationSystem levelGenerationSystem;
     HitBoxDebugSystem hitBoxDebugSystem;
+    HealthSystem healthSystem;
     public:
     World() = default;
     void update(float dt, const SDL_Event& event, SceneType sceneType) {
@@ -73,6 +75,7 @@ class World {
             spawnTimerSystem.update(entities, dt);
             enemyBehaviorSystem.update(entities, dt);
             shootingSystem.update(entities, *this, dt);
+            healthSystem.update(entities, dt);
             levelGenerationSystem.update(entities, *this, dt);
             hitBoxDebugSystem.update(entities); // Uncomment for visual hitboxs
             destructionSystem.update(entities);

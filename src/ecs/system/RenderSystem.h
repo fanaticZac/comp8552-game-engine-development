@@ -35,6 +35,49 @@ public:
             }
         }
 
+        // Get obstacle below player for shadow system
+        Entity *obstacleUnderPlayer = nullptr;
+        if (playerEntity) {
+            auto &playerTransform = playerEntity->getComponent<Transform>();
+            auto &playerCollider = playerEntity->getComponent<Collider>();
+
+            for (auto &e: entities) {
+                if (!e->hasComponent<Obstacle>()) continue;
+
+                auto &oT = e->getComponent<Transform>();
+                auto &oC = e->getComponent<Collider>();
+
+                if (playerTransform.groundZ > oT.groundZ) {
+                    break;
+                }
+                if (playerTransform.groundZ < oT.groundZ - oT.height + oT.depth) {
+                    break;
+                }
+
+                float HB_scaledAndPositionedNewX =
+                        playerTransform.position.x - playerCollider.hitBox1Scaled.x +
+                        (playerTransform.width - playerCollider.hitBox1Scaled.w) / 2.0f;
+
+                float playerHB_Left = HB_scaledAndPositionedNewX + playerCollider.hitBox1Scaled.x;
+
+                float playerHB_Right = playerHB_Left + playerCollider.hitBox1Scaled.w;
+
+                float wallHB_Left = oT.position.x + oC.hitBox3Scaled.x;
+                float wallHB_Right = wallHB_Left + oC.hitBox3Scaled.w;
+
+                bool overlapHorizontal = playerHB_Right >= wallHB_Left &&
+                                    playerHB_Left <= wallHB_Right;
+
+                // bool overlapDepth = playerTransform.groundZ <= oT.groundZ && playerTransform.groundZ >= oC.hitBox3Scaled.y;
+
+                if (overlapHorizontal) {
+                    obstacleUnderPlayer = e.get();
+                    break;
+                }
+            }
+        }
+
+
         // NOTE: Sort - by groundY to enable objects to appear in order of depth (lasers/player/enemies) --------
         // latest rendered is on top
         std::vector<Entity *> sorted;
@@ -43,7 +86,7 @@ public:
         for (auto &e: entities)
             sorted.push_back(e.get());
         std::stable_sort(sorted.begin(), sorted.end(),
-                         [playerEntity](Entity *a, Entity *b) {
+                         [](Entity *a, Entity *b) {
                              bool aRenderable = a->hasComponent<Transform>() && a->hasComponent<Sprite>();
                              bool bRenderable = b->hasComponent<Transform>() && b->hasComponent<Sprite>();
 
@@ -73,7 +116,7 @@ public:
                                                   ? aTransform.groundZ - (aTransform.height - aTransform.depth)
                                                   : aTransform.groundZ;
                              float bGroundZ = (b->hasComponent<Obstacle>())
-                                                  ? bTransform.groundZ - (aTransform.height - aTransform.depth)
+                                                  ? bTransform.groundZ - (bTransform.height - bTransform.depth)
                                                   : bTransform.groundZ;
 
                              return aGroundZ < bGroundZ;
@@ -128,6 +171,17 @@ public:
                     sprite.src = anim.clips[anim.currentClip].frameIndices[anim.currentFrame];
                 }
 
+                // Player/enemy - flash red on damage
+                if (entity->hasComponent<Health>()) {
+                    auto &health = entity->getComponent<Health>();
+                    if (health.damageFlash) {
+                        // Shade sprite red
+                        SDL_SetTextureColorMod(sprite.texture, 255, 0, 0); // red
+                    } else {
+                        SDL_SetTextureColorMod(sprite.texture, 255, 255, 255); // normal
+                    }
+                }
+
                 // Shadow
                 // TODO - REMOVE HARDCODED VALUES here - I'm using 64x64 shadow pics scaled to 192....
                 // TODO - and then am adjusting here for laser reflections also - is messy.
@@ -137,7 +191,10 @@ public:
                     dst.x = (entity->hasComponent<Projectile>())
                                 ? shadow.renderX - 96 - cam.view.x
                                 : shadow.renderX - 32 - cam.view.x;
-                    dst.y = shadow.renderY - 32 - cam.view.y;
+                    if (entity->hasComponent<Player>() && obstacleUnderPlayer)
+                        dst.y = shadow.renderY - 32 - obstacleUnderPlayer->getComponent<Transform>().depth - cam.view.y;
+                    else
+                        dst.y = shadow.renderY - 32 - cam.view.y;
                     dst.w = (entity->hasComponent<Projectile>()) ? 192 * shadow.currentScale : 64 * shadow.currentScale;
                     dst.h = 64 * shadow.currentScale;
 

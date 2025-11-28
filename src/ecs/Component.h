@@ -113,11 +113,11 @@ struct Collider {
         hitBox3Scaled.h = hitBox2Scaled.h;
 
         // Debug
-        std::cout << "Collider::createDynamicHitBox3\n";
-        std::cout << "cubeDepthMaximum = " << cubeDepthMaximum << "\n";
-        std::cout << "cubeDepthGroundZ = " << cubeDepthGroundZ << "\n";
-        std::cout << "groundZ_alpha = " << groundZ_alpha << "\n";
-        std::cout << "newCubeHitBoxOffsetValue = " << newCubeHitBoxOffsetValue << "\n";
+        // std::cout << "Collider::createDynamicHitBox3\n";
+        // std::cout << "cubeDepthMaximum = " << cubeDepthMaximum << "\n";
+        // std::cout << "cubeDepthGroundZ = " << cubeDepthGroundZ << "\n";
+        // std::cout << "groundZ_alpha = " << groundZ_alpha << "\n";
+        // std::cout << "newCubeHitBoxOffsetValue = " << newCubeHitBoxOffsetValue << "\n";
 
         return true;
     }
@@ -150,6 +150,8 @@ struct SceneState {
 
 struct Health {
     int currentHealth{};
+    bool damageFlash = false;
+    float damageFlashTimer = 0.2f;
 };
 
 // Added -
@@ -184,7 +186,7 @@ struct Boost {
 struct Physics {
     const float gravityMetersPerSecond = 9.81; // m/s -  we assume that 1 tile is 1 meter
     const float gravityPixelsPerSecond2 = gravityMetersPerSecond * 32; //32 being tile size = 313.92
-    const float xMaxSpeed = 240.0f;
+    const float xMaxSpeed = 360.0f;
     float height = 0.0f; // how far above groundY
     Vector2D velocity{};
     bool grounded = false;
@@ -201,6 +203,7 @@ struct Input {
     bool boost = false;
     bool shootGun1 = false;
     bool shootGun2 = false;
+    bool moveBackwards = false;
 };
 
 struct Shadow {

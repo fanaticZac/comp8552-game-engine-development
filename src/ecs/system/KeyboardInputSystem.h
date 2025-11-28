@@ -49,6 +49,7 @@ public:
                 input.boost = keyDown[SDLK_SPACE]; // Boost Handled
                 input.shootGun1 = keyDown[SDLK_LEFT];
                 input.shootGun2 = keyDown[SDLK_RIGHT];
+                input.moveBackwards = keyDown[SDLK_LSHIFT];
 
                 boost.boosting = input.boost;
                 if (boost.boosting) playerProperties.isStandingOnObstacle = false;
@@ -62,7 +63,7 @@ public:
                 float groundYMovementIncrement = 180.0f; // per second with dt - was 2.0 before
                 float directionXMovementIncrement = 1; // Is normalized later so will be 1 either way
                 velocity.direction = {0, 0};
-                velocity.speed = 180.0f; // will be velocity.x speed
+                velocity.speed = 180.0f; // only used for X speed in reality
 
                 // Movement Boundary
                 float characterVerticalBoundarySpacing = 12.0f; // Don't change lightly - debug exact outputs - been used for parameters in CharacterScale
@@ -71,14 +72,18 @@ public:
                 // BOUNDARY CODE SPECIFICALLY - BEST NOT TO TOUCH THIS - FULLY TESTED BOUNDARY - IT'S TIME-CONSUMING TO RETEST......
 
                 // Still honing this in. Adding the v.direction.x for W/S allows it to move in alignment with the angled level
-                if (physics.grounded || boost.boosting || playerProperties.isStandingOnObstacle) { // CAN ONLY MOVE WHEN BOOSTING OR RUNNING
+                // if (physics.grounded || boost.boosting || playerProperties.isStandingOnObstacle) { // CAN ONLY MOVE WHEN BOOSTING OR RUNNING - not falling
                     if (input.moveTop) {
                         // boundary
                         if (transform.groundZ + transform.height - characterVerticalBoundarySpacing - (groundYMovementIncrement * dt) >= Map::playerGroundTop) {
+                            // forward diagonal movements should have same total speed - not double
+                            if (input.moveRight) {
+                                groundYMovementIncrement /= 2;
+                            }
+
                             // movement
                             transform.groundZ -= groundYMovementIncrement * dt;
-
-                            // velocity.direction.x -= directionXMovementIncrement; // kept here to remind me how to change to diagonal movement
+                            velocity.direction.x = -directionXMovementIncrement; // kept here to remind me how to change to diagonal movement
 
                             if (physics.grounded) {
                                 transform.position.y = transform.groundZ;
@@ -88,9 +93,13 @@ public:
 
                     if (input.moveBottom) {
                         if (transform.groundZ + transform.height  + (groundYMovementIncrement * dt) <= Map::playerGroundBottom) {
-                            transform.groundZ += groundYMovementIncrement * dt;
+                            // diagonal movements should have same total speed
+                            if (input.moveRight) {
+                                groundYMovementIncrement /= 2;
+                            }
 
-                             // velocity.direction.x += directionXMovementIncrement; // kept here to remind me where to change to diagonal movement
+                            transform.groundZ += groundYMovementIncrement * dt;
+                             velocity.direction.x = directionXMovementIncrement; // kept here to remind me where to change to diagonal movement
 
                             if (physics.grounded) {
                                 transform.position.y = transform.groundZ;
@@ -104,18 +113,41 @@ public:
                     if (input.moveLeft) {
                         //boundary
                         if (transform.position.x - directionXMovementIncrement + collider.hitBox2Scaled.y + collider.hitBox2Scaled.w - characterHorizontalBoundarySpacing >= Map::screenLeft) {
-                            velocity.direction.x -= directionXMovementIncrement;
-                            // velocity.speed += 60; // slowly back up.
+                            // diagonal movements should have same total speed
+                            velocity.direction.x = -directionXMovementIncrement;
+
+                            if (input.moveTop) {
+                                // velocity.direction.x = -1;
+                                velocity.speed *= 2;
+                                // std::cout << "Topleft intended " << velocity.direction.x << " " << velocity.speed << std::endl;
+                            }
+                            if (input.moveBottom) {
+                                // Down and back, this matches the level speed. Appears aligned 45 degrees
+                                velocity.direction.x = 0; //
+                            }
+
+                            if (input.moveBackwards) {
+                                velocity.speed += 90; // slowly back up.
+                            }
                         }
                     }
 
                     if (input.moveRight) {
                         if (transform.position.x + transform.width + directionXMovementIncrement - collider.hitBox2Scaled.y - collider.hitBox2Scaled.w + characterHorizontalBoundarySpacing <= Map::screenRight) {
-                        velocity.direction.x += directionXMovementIncrement;
+                            // diagonal movements should have same total speed
+                            velocity.direction.x = directionXMovementIncrement;
+
+                            // diagonal movements should have same total speed
+                            if (input.moveTop) {
+                                velocity.speed /= 2;
+                            }
+                            if (input.moveBottom) {
+                                velocity.speed /= 2;
+                            }
                         }
                     }
                 }
-            }
+            // }
         }
     }
 };

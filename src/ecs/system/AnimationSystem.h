@@ -88,10 +88,13 @@ public:
                                 newClip = "walk_and_gun_0";
                                 animation.speed = walkVerticallySpeed;
                             } else if (input.moveLeft && transform.groundZ == transform.oldGroundZ) {
-                                newClip = "walk_and_gun_1";
+                                if (input.moveBackwards) {
+                                    newClip = "walk_and_gun_1";
                                 animation.speed = walkBackwardsSpeed;
-                                // newClip = "stand_and_gun_0";
-                                // animation.speed = 5.0f; // it's only 1 clip
+                                }else {
+                                    newClip = "stand_and_gun_0";
+                                animation.speed = 5.0f; // it's only 1 clip
+                                }
                             } else {
                                 newClip = "walk_and_gun_0";
                                 animation.speed = walkSpeed;
@@ -111,10 +114,14 @@ public:
                                 newClip = "walk_and_gun_1";
                                 animation.speed = walkVerticallySpeed;
                             } else if (input.moveLeft && transform.groundZ == transform.oldGroundZ) {
-                                newClip = "walk_and_gun_1";
+                                if (input.moveBackwards) {
+                                    newClip = "walk_and_gun_1";
                                 animation.speed = walkBackwardsSpeed;
-                                // newClip = "stand_and_gun_1";
-                                // animation.speed = 5.0f; // it's only 1 clip
+                                } else {
+                                    newClip = "stand_and_gun_1";
+                                    animation.speed = 5.0f; // it's only 1 clip
+                                }
+
                             } else {
                                 newClip = "walk_and_gun_1";
                                 animation.speed = walkSpeed;
@@ -134,11 +141,13 @@ public:
                                 newClip = "walk";
                                 animation.speed = walkVerticallySpeed;
                             } else if (input.moveLeft && transform.groundZ == transform.oldGroundZ) {
-                                // changed to move backwards -same as wall for simplicity
-                                newClip = "walk";
-                                animation.speed = walkBackwardsSpeed;
-                                // newClip = "stand";
-                                // animation.speed = 5.0f; // it's only 1 clip
+                                if (input.moveBackwards) {
+                                    newClip = "walk";
+                                    animation.speed = walkBackwardsSpeed;
+                                } else {
+                                    newClip = "stand";
+                                    animation.speed = 5.0f;
+                                }
                             } else {
                                 newClip = "walk";
                                 animation.speed = walkSpeed;

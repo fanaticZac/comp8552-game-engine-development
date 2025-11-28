@@ -19,7 +19,7 @@ EventResponseSystem::EventResponseSystem(World &world) {
         if (e.type != EventType::Collision) return;
 
         const auto &collision = static_cast<const CollisionEvent &>(e); // cast base type to collision type
-        
+
         onCollision(collision, world);
     });
 
@@ -65,14 +65,15 @@ void EventResponseSystem::onCollision(const CollisionEvent &c, World &world) {
         // }
 
         // Projectile collision with player or entity.
-        if (eA->hasComponent<Projectile>() || eB->hasComponent<Projectile>() && !(eA->hasComponent<Projectile>() && eB->hasComponent<Projectile>()))
+        if (eA->hasComponent<Projectile>() || eB->hasComponent<Projectile>() && !(
+                eA->hasComponent<Projectile>() && eB->hasComponent<Projectile>()))
 
-            // std::strcmp(collA.tag.c_str(), "projectile") == 0 || std::strcmp(collB.tag.c_str(), "projectile") == 0)
-            {
+        // std::strcmp(collA.tag.c_str(), "projectile") == 0 || std::strcmp(collB.tag.c_str(), "projectile") == 0)
+        {
             Entity *projectile = eA->hasComponent<Projectile>() ? eA : eB;
             Entity *victim = projectile == eA ? eB : eA;
-            auto& projectileTransform = projectile->getComponent<Transform>();
-            auto& victimTransform = victim->getComponent<Transform>();
+            auto &projectileTransform = projectile->getComponent<Transform>();
+            auto &victimTransform = victim->getComponent<Transform>();
             auto &projectileProperties = projectile->getComponent<Projectile>();
 
             // Prevent self hits
@@ -92,32 +93,35 @@ void EventResponseSystem::onCollision(const CollisionEvent &c, World &world) {
                 return;
             }
 
-            auto &health = victim->getComponent<Health>();
-            health.currentHealth = health.currentHealth - projectileProperties.damage;
-
             // destroy projectile on hit (common behaviour)
             projectile->destroy();
+            // Apply damage
+            auto &health = victim->getComponent<Health>();
+            health.currentHealth -= projectileProperties.damage;
 
-            // update global player UI state if the victim is the player
+            // Trigger red flash
+            health.damageFlash = true;
+            health.damageFlashTimer = 0.2f;
+
             if (victim->hasComponent<Player>()) {
                 Game::gameState.playerHealth = health.currentHealth;
             }
 
             std::cout
-                    << (victim->hasComponent<Enemy>() ? "Enemy " : "Player ")
-                    << "health after hit: "
-                    << health.currentHealth
-                    << std::endl;
+                << (victim->hasComponent<Enemy>() ? "Enemy " : "Player ")
+                << "health after hit: "
+                << health.currentHealth
+                << std::endl;
 
+            // Check for death
             if (health.currentHealth <= 0) {
                 if (victim->hasComponent<EnemyBehavior>()) {
                     auto &behavior = victim->getComponent<EnemyBehavior>();
                     behavior.shooting = false;
                     behavior.charging = false;
                     behavior.dying = true;
-                    behavior.fireState = EnemyBehavior::State::Dying; // NEW: switch state machine
+                    behavior.fireState = EnemyBehavior::State::Dying;
                 }
-
                 if (victim->hasComponent<Player>()) {
                     Game::onSceneChangeRequest("gameover");
                 }
@@ -234,8 +238,7 @@ void EventResponseSystem::onCollision(const CollisionEvent &c, World &world) {
             //                       hitBox1Scaled.h;
 
 
-
-                // WORKING - MOVED TO UTILITY FUNCTION createDynamicHitBox3
+            // WORKING - MOVED TO UTILITY FUNCTION createDynamicHitBox3
             // float cubeDepthMaximum = std::fabs(wallCollider.hitBox1Scaled.x - wallCollider.hitBox2Scaled.x);
             // float cubeDepthGroundZ = wallTransform.groundZ - playerTransform.groundZ;
             // float groundZ_alpha = cubeDepthGroundZ / cubeDepthMaximum;
@@ -249,7 +252,6 @@ void EventResponseSystem::onCollision(const CollisionEvent &c, World &world) {
             // wallCollider.hitBox3Scaled.w = wallCollider.hitBox2Scaled.w; // same as before we just change position
             // wallCollider.hitBox3Scaled.h = wallCollider.hitBox2Scaled.h; // same as before we just change position
             // if (!wallCollider.createDynamicHitBox3ForObstacles(playerTransform.groundZ, wallTransform.groundZ)) return;
-
 
 
             // NEW HITBOX EDGES
@@ -269,7 +271,10 @@ void EventResponseSystem::onCollision(const CollisionEvent &c, World &world) {
             // For top and bottom of player - we only care about bottom of player
             // Distinction needs to be made for groundZ
             float overlap_Top = playerHB_Bottom - wallHB_Top;
-            float overlap_Bottom = wallHB_Bottom - playerHB_Bottom;
+            // float overlap_Bottom = wallHB_Bottom - playerHB_Bottom;
+            float overlap_Bottom = wallTransform.position.y + wallTransform.height - playerHB_Bottom;
+            //HB1 is front of cube. HB3 is always 0 because it matchs depth
+            // always 0 - dynamic hitbox aligns with player bottom
 
             std::cout << "\n--- COLLISION DEBUG ---\n";
             // transforms (player and wall)
@@ -295,22 +300,42 @@ void EventResponseSystem::onCollision(const CollisionEvent &c, World &world) {
             std::cout << "overlap_Bottom  = " << overlap_Bottom << "\n";
             std::cout << "-------------------------\n";
 
-            if (overlap_Top > 0  &&
-                playerHB_Bottom < wallHB_Top + wallCollider.hitBox3Scaled.h / 20 && // Ensures it doesn't jump up from side
-                overlap_Left < wallCollider.hitBox3Scaled.w + playerCollider.hitBox1Scaled.w && // Ensures player can walk to edge
-                overlap_Right < wallCollider.hitBox3Scaled.w + playerCollider.hitBox1Scaled.w) { // Ensures player can walk to edge
+            float overlapCornerMargin = 10.0f;
+
+            if (overlap_Top > 0 &&
+                // Ensures it doesn't jump up from side
+                playerHB_Bottom < wallHB_Top + wallCollider.hitBox3Scaled.h * .20 &&
+                // Ensures player can walk to edge
+                overlap_Left < wallCollider.hitBox3Scaled.w + playerCollider.hitBox1Scaled.w &&
+                // Ensures player can walk to edge
+                overlap_Right < wallCollider.hitBox3Scaled.w + playerCollider.hitBox1Scaled.w) {
                 playerTransform.position.y -= overlap_Top;
                 playerProperties.isStandingOnObstacle = true;
-            }
-            else {
-                if (overlap_Left > 0 && playerHB_Bottom > wallHB_Top && overlap_Right > overlap_Left) {
+            } else if (overlap_Bottom > 0 && // use front HB for bottom
+                       overlap_Bottom < wallCollider.hitBox3Scaled.h * .20 &&
+                       (overlap_Left >= overlapCornerMargin && overlap_Right >= overlapCornerMargin)) {
+                // Player hit the cube from underneath → push downward
+                playerTransform.groundZ += overlap_Bottom;
+                if (playerPhysics.grounded) {
+                    playerTransform.position.y = playerTransform.groundZ;
+                }
+                playerProperties.isStandingOnObstacle = false;
+            } else {
+                playerProperties.isStandingOnObstacle = false;
+                if (overlap_Left > 0 && playerHB_Bottom > wallHB_Top + 1.0f && overlap_Right >
+                    overlap_Left) {
                     playerTransform.position.x -= overlap_Left;
                 }
-                if (overlap_Right > 0 && playerHB_Bottom > wallHB_Top && overlap_Left > overlap_Right) {
+                if (overlap_Right > 0 && playerHB_Bottom > wallHB_Top + 1.0f && overlap_Left >
+                    overlap_Right) {
                     playerTransform.position.x += overlap_Right;
                     playerProperties.isStandingBehindObstacleEntityID = wall->getID();
                 }
             }
+
+            std::cout << "DEBUG: overlap_Bottom = " << overlap_Bottom
+                    << ", overlap_Left = " << overlap_Left
+                    << ", overlap_Right = " << overlap_Right << std::endl;
 
             // ========================================================================
             //  "YOU SHALL NOT PASS (wall boundaries) !!!! ... .... flee you fool(ish player)s"
@@ -347,6 +372,4 @@ void EventResponseSystem::onCollision(const CollisionEvent &c, World &world) {
             // ========================================================================
         }
     }
-
-
 }

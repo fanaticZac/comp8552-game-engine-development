@@ -109,18 +109,6 @@ void LevelGenerationSystem::spawnWallObstacle(World &world) {
         // NOTE: For cube obstacle, HB1 is front of box, HB2 is back of box, and
         // NOTE: - depth is used to create that 45 degree angle matching the sprite
         auto &hb = wall.addComponent<Collider>("wall", SDL_FRect(0, 0, 4 * 32, 4 * 32), SDL_FRect(64, 64, 4 * 32, 4 * 32));
-        // hb.hitBox3offsetXScaled = 48, hb.hitBox3offsetYScaled = 48, hb.hitBox3widthScaled = 4 * 32, hb.
-        //         hitBox3heightScaled = 4 * 32;
-        // hb.hitBox4offsetXScaled = 40, hb.hitBox4offsetYScaled = 40, hb.hitBox4widthScaled = 4 * 32, hb.
-        //         hitBox4heightScaled = 4 * 32;
-        // hb.hitBox5offsetXScaled = 32, hb.hitBox5offsetYScaled = 0, hb.hitBox5widthScaled = 4 * 32, hb.
-        //         hitBox5heightScaled = 4 * 32;
-        // hb.hitBox6offsetXScaled = 24, hb.hitBox6offsetYScaled = 24, hb.hitBox6widthScaled = 4 * 32, hb.
-        //         hitBox6heightScaled = 4 * 32;
-        // hb.hitBox7offsetXScaled = 16, hb.hitBox7offsetYScaled = 16, hb.hitBox7widthScaled = 4 * 32, hb.
-        //         hitBox7heightScaled = 4 * 32;
-        // hb.hitBox8offsetXScaled = 8, hb.hitBox8offsetYScaled = 8, hb.hitBox8widthScaled = 4 * 32, hb.hitBox8heightScaled
-        //         = 4 * 32;
 
         // std::cout << "Created wall segment " << i+1 << "/" << segments << std::endl;
     }
