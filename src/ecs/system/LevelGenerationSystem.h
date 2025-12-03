@@ -21,7 +21,7 @@ public:
 
     void spawnWallObstacle(World &world);
 
-A    void spawnCarObstacle(World &world);
+    void spawnCarObstacle(World &world);
 
     static void spawnEnemy1(World &world);
 
