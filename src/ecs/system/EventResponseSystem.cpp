@@ -4,12 +4,9 @@
 
 
 #include "EventResponseSystem.h"
-
-
 #include <cfloat>
 #include <cmath>
 #include <cstring>
-
 #include "Game.h"
 #include "World.h"
 

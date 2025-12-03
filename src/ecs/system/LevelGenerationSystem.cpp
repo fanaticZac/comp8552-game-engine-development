@@ -12,10 +12,12 @@ void LevelGenerationSystem::update(const std::vector<std::unique_ptr<Entity> > &
     bool enemyExists = false;
 
     int activeWalls = 0;
+    int activeCars = 0;
 
     // We only want to generate enemy if no enemy exists
     for (auto &e: entities) {
         if (e->hasComponent<Obstacle>() && e->isActive()) activeWalls++;
+        if (e->hasComponent<CarObstacle>() && e->isActive()) activeCars++;
 
         if (e->hasComponent<Enemy>() && e->isActive()) {
             enemyExists = true;
@@ -43,6 +45,15 @@ void LevelGenerationSystem::update(const std::vector<std::unique_ptr<Entity> > &
                 wallSpawnTimer = wallSpawnInterval;
             }
         }
+
+        // 2) Car spawner
+        if (activeCars < maxCars) {
+            carSpawnTimer -= dt;
+            if (carSpawnTimer <= 0.0f) {
+                spawnCarObstacle(world);
+                carSpawnTimer = carSpawnInterval;
+            }
+        }
     }
 }
 
@@ -64,7 +75,7 @@ void LevelGenerationSystem::spawnWallObstacle(World &world) {
     int startingYArray[] = {224, 288, 352, 416, 480, 544};
     float baseY = (float) startingYArray[rand() % 6];
     float baseX = world.getMap().screenRight; // Spawn off-screen right
-    int verticalStep = 64;
+    int verticalStep = frameH - frameD; // difference is offset of the cube.
     int segmentPotentials = (maxY - baseY) / verticalStep;
     if (segmentPotentials < 1) segmentPotentials = 1;
     int segments = rand() % segmentPotentials + 1;
@@ -113,7 +124,146 @@ void LevelGenerationSystem::spawnWallObstacle(World &world) {
         // std::cout << "Created wall segment " << i+1 << "/" << segments << std::endl;
     }
 }
+//
+//
+// void LevelGenerationSystem::spawnCarObstacle(World &world) {
+//     // std::cout << "Wall obstacle created" << std::endl;
+//
+//     SDL_Texture *tex = TextureManager::load("../assets/level/Obstacles2.png");
+//
+//     const int frameW = 16 * 9;
+//     const int frameH = 16 * 9;
+//     const int frameD = 11*9;
+//
+//     // Spawn position
+//     // int minY = world.getMap().playerGroundTop - 128;
+//     int maxY = world.getMap().screenBottom - 16;
+//
+//     // Just manually doing this
+//     int startingYArray[] = {272, 326, 380, 434, 488, 542};
+//     float baseY = (float) startingYArray[rand() % 6];
+//     float baseX = world.getMap().screenRight; // Spawn off-screen right
+//     int offset = frameH - frameD; // difference is offset of the cube.
+//     int segmentPotentials = (maxY - baseY) / offset;
+//     if (segmentPotentials < 1) segmentPotentials = 1;
+//     int segments = 1; //rand() % segmentPotentials + 1;
+//
+//     for (int i = 0; i < segments; i++) {
+//         // Offset each segment 64px right & 64px down - for alignment of rows
+//         float x = baseX + (i * offset);
+//         float y = baseY + (i * offset);
+//
+//
+//         auto &wall(world.createEntity());
+//         wall.addComponent<Obstacle>();
+//         wall.addComponent<CarObstacle>();
+//         // wall.addComponent<ScaleThisObjectByDistance>();
+//
+//         // Transform
+//         auto &transform = wall.addComponent<Transform>(
+//             Vector2D(x, y),
+//             0.0f,
+//             1.0f,
+//             frameW,
+//             frameH,
+//             frameD
+//         );
+//         transform.groundZ = y - offset;
+//
+//         // Moving left
+//         wall.addComponent<Velocity>(Vector2D(-1, 0), 180.0f);
+//
+//         // Sprite (first 192x192 region)
+//         SDL_FRect src{0, 0, (float) frameW, (float) frameH};
+//         SDL_FRect dst{x, y, (float) frameW, (float) frameH};
+//
+//         auto &sprite = wall.addComponent<Sprite>();
+//         sprite.texture = tex;
+//         sprite.src = src;
+//         sprite.dst = dst;
+//         sprite.baseWidth = frameW;
+//         sprite.baseHeight = frameH;
+//
+//         // Collider
+//         // NOTE: For player, HB1 is on ground, HB2 is when boosting
+//         // NOTE: For cube obstacle, HB1 is front of box, HB2 is back of box, and
+//         // NOTE: - depth is used to create that 45 degree angle matching the sprite
+//         auto &hb = wall.addComponent<Collider>("wall", SDL_FRect(0, 0, frameD, frameD), SDL_FRect(offset, offset, frameD, frameD));
+//
+//         // std::cout << "Created wall segment " << i+1 << "/" << segments << std::endl;
+//     }
+// }
 
+
+
+void LevelGenerationSystem::spawnCarObstacle(World &world) {
+    // std::cout << "Wall obstacle created" << std::endl;
+
+    SDL_Texture *tex = TextureManager::load("../assets/level/car1.png");
+
+    const int frameW = 32 * 5;
+    const int frameH = 25 * 5;
+    const int frameD = 16 * 5;
+
+    // Spawn position
+    // int minY = world.getMap().playerGroundTop - 128;
+    int maxY = world.getMap().screenBottom - 16;
+
+    // Just manually doing this
+    int startingYArray[] = {272, 326, 380, 434, 488, 542};
+    float baseY = (float) startingYArray[rand() % 6];
+    float baseX = world.getMap().screenRight; // Spawn off-screen right
+    int offsetW = frameW - frameD; // difference is offset of the cube.
+    int offsetH = frameH - frameD; // difference is offset of the cube.
+    int segmentPotentials = (maxY - baseY) / offsetH;
+    if (segmentPotentials < 1) segmentPotentials = 1;
+    int segments = rand() % segmentPotentials + 1;
+
+    for (int i = 0; i < segments; i++) {
+        // Offset each segment 64px right & 64px down - for alignment of rows
+        float x = baseX + (i * offsetW);
+        float y = baseY + (i * offsetH);
+
+
+        auto &wall(world.createEntity());
+        wall.addComponent<Obstacle>();
+        wall.addComponent<CarObstacle>();
+        // wall.addComponent<ScaleThisObjectByDistance>();
+
+        // Transform
+        auto &transform = wall.addComponent<Transform>(
+            Vector2D(x, y),
+            0.0f,
+            1.0f,
+            frameW,
+            frameH,
+            frameD
+        );
+        transform.groundZ = y - offsetH-8*5;
+
+        // Moving left
+        wall.addComponent<Velocity>(Vector2D(-1, 0), 180.0f);
+
+        // Sprite (first 192x192 region)
+        SDL_FRect src{0, 0, (float) frameW, (float) frameH};
+        SDL_FRect dst{x, y, (float) frameW, (float) frameH};
+
+        auto &sprite = wall.addComponent<Sprite>();
+        sprite.texture = tex;
+        sprite.src = src;
+        sprite.dst = dst;
+        sprite.baseWidth = frameW;
+        sprite.baseHeight = frameH;
+
+        // Collider
+        // NOTE: For player, HB1 is on ground, HB2 is when boosting
+        // NOTE: For cube obstacle, HB1 is front of box, HB2 is back of box, and
+        // NOTE: - depth is used to create that 45 degree angle matching the sprite
+        auto &hb = wall.addComponent<Collider>("wall", SDL_FRect(0, 8*5, frameD, frameD-8*5), SDL_FRect(offsetW, offsetH+8*5, frameD, frameD - 8*5));
+
+        // std::cout << "Created wall segment " << i+1 << "/" << segments << std::endl;
+    }
+}
 
 void LevelGenerationSystem::spawnEnemy1(World &world) {
     std::cout << "Enemy created" << std::endl;

@@ -21,6 +21,8 @@ public:
 
     void spawnWallObstacle(World &world);
 
+A    void spawnCarObstacle(World &world);
+
     static void spawnEnemy1(World &world);
 
 private:
@@ -30,6 +32,9 @@ private:
     float wallSpawnTimer = 1.0f;
     float wallSpawnInterval = 30.0f;
     int maxWalls = 10;
+    float carSpawnTimer = 1.0f;
+    float carSpawnInterval = 30.0f;
+    int maxCars = 10;
 };
 
 #endif //COMP8552_FINAL_PROJECT_LEVELGENERATIONSYSTEM_H

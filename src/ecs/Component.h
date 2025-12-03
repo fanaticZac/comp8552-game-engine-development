@@ -272,6 +272,8 @@ struct Player {
 struct Obstacle {
 
 }; // For destruction system to properly delete when leaving camera view.
+
+struct CarObstacle {};
 struct ScaleThisObjectByDistance {}; // Just enemies/player (shots are scaled in shootingSyste)
 
 
